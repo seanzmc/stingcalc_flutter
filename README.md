@@ -1,6 +1,7 @@
 # stingcalc_flutter
 
 A new Flutter project.
+Page is at https://seanzmc.github.io/stingcalc_flutter/
 
 ## Getting Started
 
