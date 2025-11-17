@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'engine/core_calculators.dart';
-import 'widgets/clear_button.dart';
 
 class RateSolverScreen extends StatefulWidget {
   const RateSolverScreen({super.key});
@@ -108,7 +107,17 @@ void initState() {
               'Interest Rate Solver',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             TextFormField(
               controller: _principalController,
               decoration: const InputDecoration(
@@ -151,9 +160,18 @@ void initState() {
               onFieldSubmitted: (_) => _calculate(),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _calculate,
-              child: const Text('Solve for Rate'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _calculate,
+                  child: const Text('Solve for Rate'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: _clearForm,
+                  child: const Text('Clear'),
+                ),
+              ],
             ),
             const SizedBox(height: 24),
             if (_ratePercent != null) ...[
