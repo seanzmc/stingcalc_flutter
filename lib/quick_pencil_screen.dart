@@ -42,6 +42,31 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
   bool _rebatesReduceTaxable = false;
 
   QuickPencilResult? _result;
+  String? _errorMessage;
+
+  void _clearForm() {
+    _clientNameController.clear();
+    _msrpController.clear();
+    _discountController.clear();
+    _rebatesController.clear();
+    _sellingPriceController.clear();
+    _additionalEqController.clear();
+    _tradeAllowanceController.clear();
+    _tradePayoffController.clear();
+    _downPaymentController.clear();
+    _customTagFeeController.clear();
+    _stateController.clear();
+    _customTaxRateController.text = '6.0';
+
+    setState(() {
+      _saleType = SaleType.newVehicle;
+      _tagType = TagType.newTag;
+      _taxOutsideFl = false;
+      _rebatesReduceTaxable = false;
+      _result = null;
+      _errorMessage = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -70,8 +95,15 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     return null;
   }
 
-  void _calculate() {
-    if (!_formKey.currentState!.validate()) return;
+    void _calculate() {
+    final valid = _formKey.currentState!.validate();
+    if (!valid) {
+      setState(() {
+        _errorMessage = 'Please fix the highlighted fields.';
+        _result = null;
+      });
+      return;
+    }
 
     double parseOrZero(TextEditingController c) =>
         double.tryParse(c.text.trim()) ?? 0.0;
@@ -96,28 +128,42 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
     final selectedState = _stateController.text.trim();
 
-    final result = QuickPencilEngine.calculate(
-      saleType: _saleType,
-      clientName: clientName,
-      msrp: msrp,
-      sellingPriceInput: sellingPriceInput,
-      additionalEquipment: additionalEq,
-      discount: discount,
-      rebates: rebates,
-      tradeAllowance: tradeAllowance,
-      tradePayoff: tradePayoff,
-      downPayment: downPayment,
-      tagType: _tagType,
-      customTagFee: customTagFee,
-      taxOutsideFl: _taxOutsideFl,
-      selectedState: selectedState,
-      customTaxRatePercent: customTaxRate,
-      rebatesReduceTaxable: _rebatesReduceTaxable,
-    );
+    try {
+      final result = QuickPencilEngine.calculate(
+        saleType: _saleType,
+        clientName: clientName,
+        msrp: msrp,
+        sellingPriceInput: sellingPriceInput,
+        additionalEquipment: additionalEq,
+        discount: discount,
+        rebates: rebates,
+        tradeAllowance: tradeAllowance,
+        tradePayoff: tradePayoff,
+        downPayment: downPayment,
+        tagType: _tagType,
+        customTagFee: customTagFee,
+        taxOutsideFl: _taxOutsideFl,
+        selectedState: selectedState,
+        customTaxRatePercent: customTaxRate,
+        rebatesReduceTaxable: _rebatesReduceTaxable,
+      );
 
-    setState(() {
-      _result = result;
-    });
+      setState(() {
+        _result = result;
+        _errorMessage = null;
+      });
+    } on ArgumentError catch (e) {
+      setState(() {
+        _errorMessage = e.message?.toString() ?? 'Invalid input value.';
+        _result = null;
+      });
+    } catch (_) {
+      setState(() {
+        _errorMessage =
+            'Something went wrong while calculating. Please check your inputs.';
+        _result = null;
+      });
+    }
   }
 
   String _formatMoney(double value) =>
@@ -133,11 +179,21 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
         key: _formKey,
         child: ListView(
           children: [
-            Text(
+                        Text(
               'Quick Pencil',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
 
             // Sale type toggle
             SegmentedButton<SaleType>(
@@ -379,15 +435,20 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               ],
             ],
 
-            const SizedBox(height: 24),
-
-            ElevatedButton(
-              onPressed: _calculate,
-              child: const Text('Calculate Amount to Finance'),
+                        const SizedBox(height: 24),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _calculate,
+                  child: const Text('Calculate Amount to Finance'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: _clearForm,
+                  child: const Text('Clear'),
+                ),
+              ],
             ),
-
-            const SizedBox(height: 24),
-
             if (_result != null) _buildResultSummary(_result!),
           ],
         ),

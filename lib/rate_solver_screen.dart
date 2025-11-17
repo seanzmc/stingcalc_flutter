@@ -17,12 +17,24 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
 
   double? _ratePercent;
   String? _message;
+  String? _errorMessage;
 
 @override
 void initState() {
   super.initState();
   _termController.text = '72';
 }
+
+  void _clearForm() {
+    _principalController.clear();
+    _paymentController.clear();
+    _termController.text = '72';
+    setState(() {
+      _ratePercent = null;
+      _message = null;
+      _errorMessage = null;
+    });
+  }
 
   @override
   void dispose() {
@@ -42,8 +54,15 @@ void initState() {
     return null;
   }
 
-  void _calculate() {
-    if (!_formKey.currentState!.validate()) return;
+    void _calculate() {
+    final valid = _formKey.currentState!.validate();
+    if (!valid) {
+      setState(() {
+        _errorMessage = 'Please fix the highlighted fields.';
+        _ratePercent = null;
+      });
+      return;
+    }
 
     final principal = double.parse(_principalController.text);
     final payment = double.parse(_paymentController.text);
@@ -52,9 +71,11 @@ void initState() {
     final minPayment = principal / term;
     if (payment < minPayment) {
       setState(() {
+        _errorMessage = null;
         _ratePercent = null;
         _message =
-            'Payment too low to amortize loan. Minimum possible payment is \$${minPayment.toStringAsFixed(2)}.';
+            'Payment too low to amortize loan. Minimum possible payment is '
+            '\$${minPayment.toStringAsFixed(2)}.';
       });
       return;
     }
@@ -66,13 +87,11 @@ void initState() {
     );
 
     setState(() {
+      _errorMessage = null;
       _ratePercent = rate;
-      if (rate == null) {
-        _message =
-            'Unable to calculate a valid rate. Check the payment and term.';
-      } else {
-        _message = null;
-      }
+      _message = rate == null
+          ? 'Unable to calculate a valid rate. Check the payment and term.'
+          : null;
     });
   }
 

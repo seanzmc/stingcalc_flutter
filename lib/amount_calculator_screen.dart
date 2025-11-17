@@ -21,11 +21,26 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   double? _docStamps;
   double? _totalLoan;
 
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
     _rateController.text = '6.9';
     _termController.text = '72';
+  }
+
+  void _clearForm() {
+    _paymentController.clear();
+    _rateController.text = '6.9';
+    _termController.text = '72';
+    setState(() {
+      _disableDocStamps = false;
+      _loanAmount = null;
+      _docStamps = null;
+      _totalLoan = null;
+      _errorMessage = null;
+    });
   }
 
   @override
@@ -47,7 +62,14 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   }
 
   void _calculate() {
-    if (!_formKey.currentState!.validate()) return;
+    final valid = _formKey.currentState!.validate();
+    if (!valid) {
+      setState(() {
+        _errorMessage = 'Please fix the highlighted fields.';
+      });
+      return;
+    }
+    setState(() => _errorMessage = null);
 
     final payment = double.parse(_paymentController.text);
     final rate = double.parse(_rateController.text);

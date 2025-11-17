@@ -19,6 +19,17 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   double? _annualIncome;
   String? _error;
 
+  void _clearForm() {
+    _ytdController.clear();
+    setState(() {
+      _checkDate = null;
+      _hireDate = null;
+      _monthlyIncome = null;
+      _annualIncome = null;
+      _error = null;
+    });
+  }
+
   @override
   void dispose() {
     _ytdController.dispose();
@@ -66,7 +77,9 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
 
     if (_checkDate == null) {
       setState(() {
-        _error = 'Please select a check date.';
+        _error = 'Please select the date of the latest paystub.';
+        _monthlyIncome = null;
+        _annualIncome = null;
       });
       return;
     }
@@ -143,6 +156,11 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             ElevatedButton(
               onPressed: _calculate,
               child: const Text('Estimate Income'),
+            ),
+            const SizedBox(width: 12),
+            OutlinedButton(
+              onPressed: _clearForm,
+              child: const Text('Clear'),
             ),
             const SizedBox(height: 24),
             if (_error != null)
