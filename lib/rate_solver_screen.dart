@@ -18,6 +18,12 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   double? _ratePercent;
   String? _message;
 
+@override
+void initState() {
+  super.initState();
+  _termController.text = '72';
+}
+
   @override
   void dispose() {
     _principalController.dispose();
@@ -91,6 +97,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),
@@ -102,6 +109,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),

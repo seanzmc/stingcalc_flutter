@@ -22,6 +22,13 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   double? _totalLoan;
 
   @override
+  void initState() {
+    super.initState();
+    _rateController.text = '6.9';
+    _termController.text = '72';
+  }
+
+  @override
   void dispose() {
     _paymentController.dispose();
     _rateController.dispose();
@@ -83,6 +90,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),
@@ -94,6 +102,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),
