@@ -28,6 +28,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   double? _totalLoan;
   double? _totalCost;
 
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +37,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       _loanAmountController.text =
           widget.initialLoanAmount!.toStringAsFixed(2);
     }
+    // sensible defaults
+    _rateController.text = '6.9';
+    _termController.text = '72';
   }
 
   @override
@@ -46,6 +51,21 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       _loanAmountController.text =
           widget.initialLoanAmount!.toStringAsFixed(2);
     }
+  }
+
+  void _clearForm() {
+    _loanAmountController.clear();
+    _rateController.text = '6.9';
+    _termController.text = '72';
+
+    setState(() {
+      _disableDocStamps = false;
+      _payment = null;
+      _docStamps = null;
+      _totalLoan = null;
+      _totalCost = null;
+      _errorMessage = null;
+    });
   }
 
   @override
@@ -67,7 +87,17 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   }
 
   void _calculate() {
-    if (!_formKey.currentState!.validate()) return;
+    final valid = _formKey.currentState!.validate();
+    if (!valid) {
+      setState(() {
+        _errorMessage = 'Please fix the highlighted fields.';
+      });
+      return;
+    }
+
+    setState(() {
+      _errorMessage = null;
+    });
 
     final loanAmount = double.parse(_loanAmountController.text);
     final rate = double.parse(_rateController.text);
@@ -107,7 +137,17 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               'Payment Calculator',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             TextFormField(
               controller: _loanAmountController,
               decoration: const InputDecoration(
@@ -117,6 +157,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
               validator: _requiredNumberValidator,
+              onFieldSubmitted: (_) {
+    FocusScope.of(context).nextFocus();
+  },
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -128,6 +171,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
               validator: _requiredNumberValidator,
+              onFieldSubmitted: (_) {
+    FocusScope.of(context).nextFocus();
+  },
             ),
             const SizedBox(height: 12),
             TextFormField(
@@ -160,10 +206,19 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
                 }
               },
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _calculate,
-              child: const Text('Calculate Payment'),
+                        const SizedBox(height: 24),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _calculate,
+                  child: const Text('Calculate Payment'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: _clearForm,
+                  child: const Text('Clear'),
+                ),
+              ],
             ),
             if (_payment != null) ...[
               const SizedBox(height: 24),
