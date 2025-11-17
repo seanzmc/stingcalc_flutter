@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'engine/core_calculators.dart';
+import 'widgets/clear_button.dart';
 
 class RateSolverScreen extends StatefulWidget {
   const RateSolverScreen({super.key});
