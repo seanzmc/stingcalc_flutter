@@ -18,6 +18,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   final _rateController = TextEditingController();
   final _termController = TextEditingController();
 
+  // FocusNodes to manage keyboard flow
   final _loanFocusNode = FocusNode();
   final _rateFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
@@ -40,9 +41,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     // sensible defaults
     _rateController.text = '6.9';
     _termController.text = '72';
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loanFocusNode.requestFocus();
-    });
   }
 
   @override
@@ -59,6 +57,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     _loanAmountController.clear();
     _rateController.text = '6.9';
     _termController.text = '72';
+
+    // Reset focus to the first field
+    _loanFocusNode.requestFocus();
 
     setState(() {
       _disableDocStamps = false;
@@ -110,7 +111,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     final rate = double.parse(_rateController.text);
     final term = int.parse(_termController.text);
 
-    // Florida doc stamps on note, like your JS payment calc
+    // Florida doc stamps on note
     final docStamps = _disableDocStamps ? 0.0 : LoanMath.docStamps(loanAmount);
     final principalWithTax = loanAmount + docStamps;
 
@@ -157,6 +158,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             TextFormField(
               controller: _loanAmountController,
               focusNode: _loanFocusNode,
+              autofocus: true, // Automatically focuses when screen appears
               decoration: const InputDecoration(
                 labelText: 'Loan Amount',
                 prefixText: '\$',

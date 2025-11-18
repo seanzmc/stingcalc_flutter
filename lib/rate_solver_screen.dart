@@ -15,7 +15,6 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   final _paymentController = TextEditingController();
   final _termController = TextEditingController();
 
-  // Define unique FocusNodes for the input fields
   final _principalFocusNode = FocusNode();
   final _paymentFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
@@ -34,10 +33,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     _principalController.clear();
     _paymentController.clear();
     _termController.text = '72';
-
-    // Reset focus to the first field when clearing
     _principalFocusNode.requestFocus();
-
     setState(() {
       _ratePercent = null;
       _message = null;
@@ -51,7 +47,6 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     _paymentController.dispose();
     _termController.dispose();
 
-    // Dispose of FocusNodes
     _principalFocusNode.dispose();
     _paymentFocusNode.dispose();
     _termFocusNode.dispose();
@@ -136,6 +131,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             TextFormField(
               controller: _principalController,
               focusNode: _principalFocusNode,
+              autofocus: true, // Focus immediately when screen appears
               decoration: const InputDecoration(
                 labelText: 'Loan Amount / Principal',
                 prefixText: '\$',

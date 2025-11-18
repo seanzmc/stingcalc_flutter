@@ -84,7 +84,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
     }
   }
 
-  // Updates the DateTime variables when text changes manually
   void _onDateTextChanged(String value, bool isCheckDate) {
     final parts = value.split('/');
     if (parts.length == 3 && parts[2].length == 4) {
@@ -93,7 +92,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
       final year = int.tryParse(parts[2]);
 
       if (month != null && day != null && year != null) {
-        // Basic validation before creating DateTime to avoid weird overflows
         if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
           setState(() {
             final date = DateTime(year, month, day);
@@ -108,8 +106,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
       }
     }
 
-    // If invalid or incomplete, clear the specific date variable
-    // so we don't calculate with stale data, but keep the text.
     if (isCheckDate && _checkDate != null) {
       setState(() => _checkDate = null);
     } else if (!isCheckDate && _hireDate != null) {
@@ -130,12 +126,8 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   String? _dateValidator(String? value, bool required) {
     if (!required && (value == null || value.isEmpty)) return null;
     if (required && (value == null || value.isEmpty)) return 'Required';
-
     if (value!.length != 10) return 'Enter MM/DD/YYYY';
-
-    // Check if it successfully parsed into a variable
     if (required && _checkDate == null) return 'Invalid date';
-
     return null;
   }
 
@@ -197,6 +189,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             TextFormField(
               controller: _ytdController,
               focusNode: _ytdFocusNode,
+              autofocus: true, // Focus immediately when screen appears
               decoration: const InputDecoration(
                 labelText: 'Year-to-Date Gross Income',
                 prefixText: '\$',
@@ -211,7 +204,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             ),
             const SizedBox(height: 12),
 
-            // Check Date Field
             TextFormField(
               controller: _checkDateController,
               focusNode: _checkDateFocusNode,
@@ -239,7 +231,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
 
             const SizedBox(height: 12),
 
-            // Hire Date Field
             TextFormField(
               controller: _hireDateController,
               focusNode: _hireDateFocusNode,
@@ -318,14 +309,11 @@ class _DateTextFormatter extends TextInputFormatter {
     TextEditingValue newValue,
   ) {
     final text = newValue.text;
-
-    if (text.length > 8) return oldValue; // Max 8 digits (MMDDYYYY)
+    if (text.length > 8) return oldValue;
 
     final buffer = StringBuffer();
     for (int i = 0; i < text.length; i++) {
       buffer.write(text[i]);
-      // Insert slash after month (2 digits) and day (4 digits total)
-      // But only if we have more digits coming
       if ((i == 1 || i == 3) && i != text.length - 1) {
         buffer.write('/');
       }
