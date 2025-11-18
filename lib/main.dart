@@ -62,7 +62,7 @@ class _StingcalcHomeState extends State<StingcalcHome>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Stingcalc'),
+        title: const Text('Stingcalc v0.1.3'),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
@@ -78,15 +78,11 @@ class _StingcalcHomeState extends State<StingcalcHome>
       body: TabBarView(
         controller: _tabController,
         children: [
-          PaymentCalculatorScreen(
-            initialLoanAmount: _qpAmount,
-          ),
+          PaymentCalculatorScreen(initialLoanAmount: _qpAmount),
           const AmountCalculatorScreen(),
           const RateSolverScreen(),
           const IncomeCalculatorScreen(),
-          QuickPencilScreen(
-            onUseInPayment: _handleUseInPayment,
-          ),
+          QuickPencilScreen(onUseInPayment: _handleUseInPayment),
         ],
       ),
     );

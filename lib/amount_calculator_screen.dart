@@ -137,7 +137,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
                 FocusScope.of(context).requestFocus(_rateFocusNode);
               },
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             TextFormField(
               controller: _rateController,
               focusNode: _rateFocusNode,
@@ -158,7 +158,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               focusNode: _termFocusNode,
               decoration: const InputDecoration(labelText: 'Term (months)'),
               keyboardType: TextInputType.number,
-      textInputAction: TextInputAction.done,
+              textInputAction: TextInputAction.done,
               validator: (value) {
                 final basic = _requiredNumberValidator(value);
                 if (basic != null) return basic;
