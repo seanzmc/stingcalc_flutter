@@ -15,6 +15,10 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   final _rateController = TextEditingController();
   final _termController = TextEditingController();
 
+  final _paymentFocusNode = FocusNode();
+  final _rateFocusNode = FocusNode();
+  final _termFocusNode = FocusNode();
+
   bool _disableDocStamps = false;
 
   double? _loanAmount;
@@ -48,6 +52,11 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     _paymentController.dispose();
     _rateController.dispose();
     _termController.dispose();
+
+    _paymentFocusNode.dispose();
+    _rateFocusNode.dispose();
+    _termFocusNode.dispose();
+
     super.dispose();
   }
 
@@ -116,33 +125,37 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
             ],
             TextFormField(
               controller: _paymentController,
+              focusNode: _paymentFocusNode,
               decoration: const InputDecoration(
                 labelText: 'Desired Payment',
                 prefixText: '\$',
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: _requiredNumberValidator,
+              onFieldSubmitted: (_) {
+                FocusScope.of(context).requestFocus(_rateFocusNode);
+              },
             ),
-            const SizedBox(height: 12),
             TextFormField(
               controller: _rateController,
+              focusNode: _rateFocusNode,
               decoration: const InputDecoration(
                 labelText: 'APR',
                 suffixText: '%',
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
               validator: _requiredNumberValidator,
+              onFieldSubmitted: (_) {
+                FocusScope.of(context).requestFocus(_termFocusNode);
+              },
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _termController,
-              decoration: const InputDecoration(
-                labelText: 'Term (months)',
-              ),
+              focusNode: _termFocusNode,
+              decoration: const InputDecoration(labelText: 'Term (months)'),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               validator: (value) {
@@ -193,7 +206,9 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               ),
               const SizedBox(height: 16),
               if (_docStamps != null)
-                Text('Documentary Stamp Tax: \$${_docStamps!.toStringAsFixed(2)}'),
+                Text(
+                  'Documentary Stamp Tax: \$${_docStamps!.toStringAsFixed(2)}',
+                ),
               if (_totalLoan != null)
                 Text('Total Loan Amount: \$${_totalLoan!.toStringAsFixed(2)}'),
             ],
