@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'engine/core_calculators.dart';
 
 class IncomeCalculatorScreen extends StatefulWidget {
@@ -10,7 +11,14 @@ class IncomeCalculatorScreen extends StatefulWidget {
 
 class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   final _formKey = GlobalKey<FormState>();
+
   final _ytdController = TextEditingController();
+  final _checkDateController = TextEditingController();
+  final _hireDateController = TextEditingController();
+
+  final _ytdFocusNode = FocusNode();
+  final _checkDateFocusNode = FocusNode();
+  final _hireDateFocusNode = FocusNode();
 
   DateTime? _checkDate;
   DateTime? _hireDate;
@@ -21,6 +29,11 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
 
   void _clearForm() {
     _ytdController.clear();
+    _checkDateController.clear();
+    _hireDateController.clear();
+
+    _ytdFocusNode.requestFocus();
+
     setState(() {
       _checkDate = null;
       _hireDate = null;
@@ -33,16 +46,21 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   @override
   void dispose() {
     _ytdController.dispose();
+    _checkDateController.dispose();
+    _hireDateController.dispose();
+
+    _ytdFocusNode.dispose();
+    _checkDateFocusNode.dispose();
+    _hireDateFocusNode.dispose();
     super.dispose();
   }
 
-  Future<void> _pickDate({
-    required bool isCheckDate,
-  }) async {
+  Future<void> _pickDate({required bool isCheckDate}) async {
     final now = DateTime.now();
-    final initial = isCheckDate
-        ? (_checkDate ?? now)
-        : (_hireDate ?? DateTime(now.year, 1, 1));
+    final initial =
+        isCheckDate
+            ? (_checkDate ?? now)
+            : (_hireDate ?? DateTime(now.year, 1, 1));
 
     final picked = await showDatePicker(
       context: context,
@@ -53,12 +71,49 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
 
     if (picked != null) {
       setState(() {
+        final formatted = _formatDate(picked);
         if (isCheckDate) {
           _checkDate = picked;
+          _checkDateController.text = formatted;
+          FocusScope.of(context).requestFocus(_hireDateFocusNode);
         } else {
           _hireDate = picked;
+          _hireDateController.text = formatted;
         }
       });
+    }
+  }
+
+  // Updates the DateTime variables when text changes manually
+  void _onDateTextChanged(String value, bool isCheckDate) {
+    final parts = value.split('/');
+    if (parts.length == 3 && parts[2].length == 4) {
+      final month = int.tryParse(parts[0]);
+      final day = int.tryParse(parts[1]);
+      final year = int.tryParse(parts[2]);
+
+      if (month != null && day != null && year != null) {
+        // Basic validation before creating DateTime to avoid weird overflows
+        if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+          setState(() {
+            final date = DateTime(year, month, day);
+            if (isCheckDate) {
+              _checkDate = date;
+            } else {
+              _hireDate = date;
+            }
+          });
+          return;
+        }
+      }
+    }
+
+    // If invalid or incomplete, clear the specific date variable
+    // so we don't calculate with stale data, but keep the text.
+    if (isCheckDate && _checkDate != null) {
+      setState(() => _checkDate = null);
+    } else if (!isCheckDate && _hireDate != null) {
+      setState(() => _hireDate = null);
     }
   }
 
@@ -72,12 +127,24 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
     return null;
   }
 
+  String? _dateValidator(String? value, bool required) {
+    if (!required && (value == null || value.isEmpty)) return null;
+    if (required && (value == null || value.isEmpty)) return 'Required';
+
+    if (value!.length != 10) return 'Enter MM/DD/YYYY';
+
+    // Check if it successfully parsed into a variable
+    if (required && _checkDate == null) return 'Invalid date';
+
+    return null;
+  }
+
   void _calculate() {
     if (!_formKey.currentState!.validate()) return;
 
     if (_checkDate == null) {
       setState(() {
-        _error = 'Please select the date of the latest paystub.';
+        _error = 'Please enter a valid check date.';
         _monthlyIncome = null;
         _annualIncome = null;
       });
@@ -108,8 +175,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
     });
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'Select date';
+  String _formatDate(DateTime date) {
     return '${date.month.toString().padLeft(2, '0')}/'
         '${date.day.toString().padLeft(2, '0')}/'
         '${date.year}';
@@ -130,28 +196,73 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _ytdController,
+              focusNode: _ytdFocusNode,
               decoration: const InputDecoration(
                 labelText: 'Year-to-Date Gross Income',
                 prefixText: '\$',
+                border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
+              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                FocusScope.of(context).requestFocus(_checkDateFocusNode);
+              },
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),
-            Text('Check Date'),
-            const SizedBox(height: 4),
-            OutlinedButton(
-              onPressed: () => _pickDate(isCheckDate: true),
-              child: Text(_formatDate(_checkDate)),
+
+            // Check Date Field
+            TextFormField(
+              controller: _checkDateController,
+              focusNode: _checkDateFocusNode,
+              decoration: InputDecoration(
+                labelText: 'Check Date (MM/DD/YYYY)',
+                hintText: 'MM/DD/YYYY',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _pickDate(isCheckDate: true),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                _DateTextFormatter(),
+              ],
+              onChanged: (v) => _onDateTextChanged(v, true),
+              validator: (v) => _dateValidator(v, true),
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                FocusScope.of(context).requestFocus(_hireDateFocusNode);
+              },
             ),
+
             const SizedBox(height: 12),
-            Text('Hire Date (optional)'),
-            const SizedBox(height: 4),
-            OutlinedButton(
-              onPressed: () => _pickDate(isCheckDate: false),
-              child: Text(_formatDate(_hireDate)),
+
+            // Hire Date Field
+            TextFormField(
+              controller: _hireDateController,
+              focusNode: _hireDateFocusNode,
+              decoration: InputDecoration(
+                labelText: 'Hire Date (optional)',
+                hintText: 'MM/DD/YYYY',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  icon: const Icon(Icons.calendar_today),
+                  onPressed: () => _pickDate(isCheckDate: false),
+                ),
+              ),
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+                _DateTextFormatter(),
+              ],
+              onChanged: (v) => _onDateTextChanged(v, false),
+              validator: (v) => _dateValidator(v, false),
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => _calculate(),
             ),
+
             const SizedBox(height: 24),
             Row(
               children: [
@@ -167,13 +278,10 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            const SizedBox(height: 24),
             if (_error != null)
               Text(
                 _error!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             if (_monthlyIncome != null && _annualIncome != null) ...[
               Text(
@@ -199,6 +307,33 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DateTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final text = newValue.text;
+
+    if (text.length > 8) return oldValue; // Max 8 digits (MMDDYYYY)
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < text.length; i++) {
+      buffer.write(text[i]);
+      // Insert slash after month (2 digits) and day (4 digits total)
+      // But only if we have more digits coming
+      if ((i == 1 || i == 3) && i != text.length - 1) {
+        buffer.write('/');
+      }
+    }
+
+    return TextEditingValue(
+      text: buffer.toString(),
+      selection: TextSelection.collapsed(offset: buffer.length),
     );
   }
 }

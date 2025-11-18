@@ -32,6 +32,9 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     super.initState();
     _rateController.text = '6.9';
     _termController.text = '72';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _paymentFocusNode.requestFocus(); // first field on this screen
+    });
   }
 
   void _clearForm() {

@@ -15,20 +15,29 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   final _paymentController = TextEditingController();
   final _termController = TextEditingController();
 
+  // Define unique FocusNodes for the input fields
+  final _principalFocusNode = FocusNode();
+  final _paymentFocusNode = FocusNode();
+  final _termFocusNode = FocusNode();
+
   double? _ratePercent;
   String? _message;
   String? _errorMessage;
 
-@override
-void initState() {
-  super.initState();
-  _termController.text = '72';
-}
+  @override
+  void initState() {
+    super.initState();
+    _termController.text = '72';
+  }
 
   void _clearForm() {
     _principalController.clear();
     _paymentController.clear();
     _termController.text = '72';
+
+    // Reset focus to the first field when clearing
+    _principalFocusNode.requestFocus();
+
     setState(() {
       _ratePercent = null;
       _message = null;
@@ -41,6 +50,11 @@ void initState() {
     _principalController.dispose();
     _paymentController.dispose();
     _termController.dispose();
+
+    // Dispose of FocusNodes
+    _principalFocusNode.dispose();
+    _paymentFocusNode.dispose();
+    _termFocusNode.dispose();
     super.dispose();
   }
 
@@ -54,7 +68,7 @@ void initState() {
     return null;
   }
 
-    void _calculate() {
+  void _calculate() {
     final valid = _formKey.currentState!.validate();
     if (!valid) {
       setState(() {
@@ -89,9 +103,10 @@ void initState() {
     setState(() {
       _errorMessage = null;
       _ratePercent = rate;
-      _message = rate == null
-          ? 'Unable to calculate a valid rate. Check the payment and term.'
-          : null;
+      _message =
+          rate == null
+              ? 'Unable to calculate a valid rate. Check the payment and term.'
+              : null;
     });
   }
 
@@ -120,33 +135,38 @@ void initState() {
             ],
             TextFormField(
               controller: _principalController,
+              focusNode: _principalFocusNode,
               decoration: const InputDecoration(
                 labelText: 'Loan Amount / Principal',
                 prefixText: '\$',
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              onFieldSubmitted: (_) {
+                FocusScope.of(context).requestFocus(_paymentFocusNode);
+              },
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _paymentController,
+              focusNode: _paymentFocusNode,
               decoration: const InputDecoration(
                 labelText: 'Target Payment',
                 prefixText: '\$',
               ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              onFieldSubmitted: (_) {
+                FocusScope.of(context).requestFocus(_termFocusNode);
+              },
               validator: _requiredNumberValidator,
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _termController,
-              decoration: const InputDecoration(
-                labelText: 'Term (months)',
-              ),
+              focusNode: _termFocusNode,
+              decoration: const InputDecoration(labelText: 'Term (months)'),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               validator: (value) {
@@ -187,9 +207,7 @@ void initState() {
             ] else if (_message != null) ...[
               Text(
                 _message!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
           ],

@@ -40,6 +40,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     // sensible defaults
     _rateController.text = '6.9';
     _termController.text = '72';
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loanFocusNode.requestFocus();
+    });
   }
 
   @override
