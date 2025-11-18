@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'engine/core_calculators.dart';
-import 'widgets/clear_button.dart';
 
 class IncomeCalculatorScreen extends StatefulWidget {
   const IncomeCalculatorScreen({super.key});
@@ -154,15 +153,20 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
               child: Text(_formatDate(_hireDate)),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _calculate,
-              child: const Text('Estimate Income'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _calculate,
+                  child: const Text('Estimate Income'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: _clearForm,
+                  child: const Text('Clear'),
+                ),
+              ],
             ),
-            const SizedBox(width: 12),
-            OutlinedButton(
-              onPressed: _clearForm,
-              child: const Text('Clear'),
-            ),
+            const SizedBox(height: 24),
             const SizedBox(height: 24),
             if (_error != null)
               Text(

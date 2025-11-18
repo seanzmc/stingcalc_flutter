@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'engine/quick_pencil_engine.dart';
-import 'widgets/clear_button.dart';
 
 class QuickPencilScreen extends StatefulWidget {
   final void Function(double amountToFinance)? onUseInPayment;

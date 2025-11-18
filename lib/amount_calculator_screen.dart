@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'engine/core_calculators.dart';
-import 'widgets/clear_button.dart';
 
 class AmountCalculatorScreen extends StatefulWidget {
   const AmountCalculatorScreen({super.key});
@@ -104,7 +103,17 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               'Loan Amount Calculator',
               style: Theme.of(context).textTheme.titleLarge,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
+            if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             TextFormField(
               controller: _paymentController,
               decoration: const InputDecoration(
@@ -158,9 +167,18 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               },
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _calculate,
-              child: const Text('Calculate Loan Amount'),
+            Row(
+              children: [
+                ElevatedButton(
+                  onPressed: _calculate,
+                  child: const Text('Calculate Loan Amount'),
+                ),
+                const SizedBox(width: 12),
+                OutlinedButton(
+                  onPressed: _clearForm,
+                  child: const Text('Clear'),
+                ),
+              ],
             ),
             if (_loanAmount != null) ...[
               const SizedBox(height: 24),
