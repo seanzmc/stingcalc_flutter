@@ -4,10 +4,7 @@ import 'engine/quick_pencil_engine.dart';
 class QuickPencilScreen extends StatefulWidget {
   final void Function(double amountToFinance)? onUseInPayment;
 
-  const QuickPencilScreen({
-    super.key,
-    this.onUseInPayment,
-  });
+  const QuickPencilScreen({super.key, this.onUseInPayment});
 
   @override
   State<QuickPencilScreen> createState() => _QuickPencilScreenState();
@@ -18,11 +15,16 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
   // Basic info
   final _clientNameController = TextEditingController();
+  final _clientNameFocus = FocusNode();
 
   // New car inputs
   final _msrpController = TextEditingController();
   final _discountController = TextEditingController();
   final _rebatesController = TextEditingController();
+
+  final _msrpFocus = FocusNode();
+  final _discountFocus = FocusNode();
+  final _rebatesFocus = FocusNode();
 
   // Used car / shared inputs
   final _sellingPriceController = TextEditingController();
@@ -31,14 +33,25 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
   final _tradePayoffController = TextEditingController();
   final _downPaymentController = TextEditingController();
 
+  final _sellingPriceFocus = FocusNode();
+  final _additionalEqFocus = FocusNode();
+  final _tradeAllowanceFocus = FocusNode();
+  final _tradePayoffFocus = FocusNode();
+  final _downPaymentFocus = FocusNode();
+
   // Tag & tax
   SaleType _saleType = SaleType.newVehicle;
   TagType _tagType = TagType.newTag;
   final _customTagFeeController = TextEditingController();
+  final _customTagFeeFocus = FocusNode();
 
   bool _taxOutsideFl = false;
-  final _stateController = TextEditingController(); // free text, abbrev like 'GA'
+  final _stateController = TextEditingController();
   final _customTaxRateController = TextEditingController(text: '6.0');
+
+  final _stateFocus = FocusNode();
+  final _customTaxRateFocus = FocusNode();
+
   bool _rebatesReduceTaxable = false;
 
   QuickPencilResult? _result;
@@ -57,6 +70,9 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     _customTagFeeController.clear();
     _stateController.clear();
     _customTaxRateController.text = '6.0';
+
+    // Reset focus to top
+    _clientNameFocus.requestFocus();
 
     setState(() {
       _saleType = SaleType.newVehicle;
@@ -82,6 +98,20 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     _customTagFeeController.dispose();
     _stateController.dispose();
     _customTaxRateController.dispose();
+
+    _clientNameFocus.dispose();
+    _msrpFocus.dispose();
+    _discountFocus.dispose();
+    _rebatesFocus.dispose();
+    _sellingPriceFocus.dispose();
+    _additionalEqFocus.dispose();
+    _tradeAllowanceFocus.dispose();
+    _tradePayoffFocus.dispose();
+    _downPaymentFocus.dispose();
+    _customTagFeeFocus.dispose();
+    _stateFocus.dispose();
+    _customTaxRateFocus.dispose();
+
     super.dispose();
   }
 
@@ -95,7 +125,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     return null;
   }
 
-    void _calculate() {
+  void _calculate() {
     final valid = _formKey.currentState!.validate();
     if (!valid) {
       setState(() {
@@ -119,9 +149,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     final tradePayoff = parseOrZero(_tradePayoffController);
     final downPayment = parseOrZero(_downPaymentController);
 
-    final customTagFee = _tagType == TagType.custom
-        ? double.tryParse(_customTagFeeController.text.trim())
-        : null;
+    final customTagFee =
+        _tagType == TagType.custom
+            ? double.tryParse(_customTagFeeController.text.trim())
+            : null;
 
     final customTaxRate =
         double.tryParse(_customTaxRateController.text.trim()) ?? 0.0;
@@ -166,8 +197,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     }
   }
 
-  String _formatMoney(double value) =>
-      '\$${value.toStringAsFixed(2)}';
+  String _formatMoney(double value) => '\$${value.toStringAsFixed(2)}';
 
   @override
   Widget build(BuildContext context) {
@@ -179,10 +209,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
         key: _formKey,
         child: ListView(
           children: [
-                        Text(
-              'Quick Pencil',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
+            Text('Quick Pencil', style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 8),
             if (_errorMessage != null) ...[
               Text(
@@ -198,14 +225,8 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             // Sale type toggle
             SegmentedButton<SaleType>(
               segments: const [
-                ButtonSegment(
-                  value: SaleType.newVehicle,
-                  label: Text('NEW'),
-                ),
-                ButtonSegment(
-                  value: SaleType.usedVehicle,
-                  label: Text('USED'),
-                ),
+                ButtonSegment(value: SaleType.newVehicle, label: Text('NEW')),
+                ButtonSegment(value: SaleType.usedVehicle, label: Text('USED')),
               ],
               selected: <SaleType>{_saleType},
               onSelectionChanged: (set) {
@@ -220,10 +241,19 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             // Client name
             TextFormField(
               controller: _clientNameController,
+              focusNode: _clientNameFocus,
+              autofocus: true, // Top field focus
               decoration: const InputDecoration(
                 labelText: 'Client Name (optional)',
               ),
               textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) {
+                if (isNew) {
+                  _msrpFocus.requestFocus();
+                } else {
+                  _sellingPriceFocus.requestFocus();
+                }
+              },
             ),
             const SizedBox(height: 16),
 
@@ -231,6 +261,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             if (isNew) ...[
               TextFormField(
                 controller: _msrpController,
+                focusNode: _msrpFocus,
                 decoration: const InputDecoration(
                   labelText: 'M.S.R.P.',
                   prefixText: '\$',
@@ -238,10 +269,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: (v) => _nonNegativeValidator(v, required: true),
+                onFieldSubmitted: (_) => _additionalEqFocus.requestFocus(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _additionalEqController,
+                focusNode: _additionalEqFocus,
                 decoration: const InputDecoration(
                   labelText: 'Additional Equipment',
                   prefixText: '\$',
@@ -249,10 +282,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
+                onFieldSubmitted: (_) => _discountFocus.requestFocus(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _discountController,
+                focusNode: _discountFocus,
                 decoration: const InputDecoration(
                   labelText: 'Discount',
                   prefixText: '\$',
@@ -260,10 +295,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
+                onFieldSubmitted: (_) => _rebatesFocus.requestFocus(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _rebatesController,
+                focusNode: _rebatesFocus,
                 decoration: const InputDecoration(
                   labelText: 'Rebates',
                   prefixText: '\$',
@@ -271,10 +308,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
+                onFieldSubmitted: (_) => _tradeAllowanceFocus.requestFocus(),
               ),
             ] else ...[
               TextFormField(
                 controller: _sellingPriceController,
+                focusNode: _sellingPriceFocus,
                 decoration: const InputDecoration(
                   labelText: 'Selling Price',
                   prefixText: '\$',
@@ -282,10 +321,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: (v) => _nonNegativeValidator(v, required: true),
+                onFieldSubmitted: (_) => _additionalEqFocus.requestFocus(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _additionalEqController,
+                focusNode: _additionalEqFocus,
                 decoration: const InputDecoration(
                   labelText: 'Additional Equipment',
                   prefixText: '\$',
@@ -293,6 +334,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
+                onFieldSubmitted: (_) => _tradeAllowanceFocus.requestFocus(),
               ),
             ],
 
@@ -301,6 +343,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             // Trade / down
             TextFormField(
               controller: _tradeAllowanceController,
+              focusNode: _tradeAllowanceFocus,
               decoration: const InputDecoration(
                 labelText: 'Trade Allowance',
                 prefixText: '\$',
@@ -308,10 +351,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
               validator: _nonNegativeValidator,
+              onFieldSubmitted: (_) => _tradePayoffFocus.requestFocus(),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _tradePayoffController,
+              focusNode: _tradePayoffFocus,
               decoration: const InputDecoration(
                 labelText: 'Trade Payoff',
                 prefixText: '\$',
@@ -319,10 +364,12 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
               validator: _nonNegativeValidator,
+              onFieldSubmitted: (_) => _downPaymentFocus.requestFocus(),
             ),
             const SizedBox(height: 12),
             TextFormField(
               controller: _downPaymentController,
+              focusNode: _downPaymentFocus,
               decoration: const InputDecoration(
                 labelText: 'Customer Cash / Down Payment',
                 prefixText: '\$',
@@ -330,6 +377,15 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.next,
               validator: _nonNegativeValidator,
+              onFieldSubmitted: (_) {
+                if (_tagType == TagType.custom) {
+                  _customTagFeeFocus.requestFocus();
+                } else if (_taxOutsideFl) {
+                  _stateFocus.requestFocus();
+                } else {
+                  _calculate();
+                }
+              },
             ),
 
             const SizedBox(height: 16),
@@ -338,10 +394,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             DropdownButtonFormField<TagType>(
               initialValue: _tagType,
               items: const [
-                DropdownMenuItem(
-                  value: TagType.newTag,
-                  child: Text('New Tag'),
-                ),
+                DropdownMenuItem(value: TagType.newTag, child: Text('New Tag')),
                 DropdownMenuItem(
                   value: TagType.transfer,
                   child: Text('Transfer Tag'),
@@ -357,23 +410,31 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   _tagType = value;
                 });
               },
-              decoration: const InputDecoration(
-                labelText: 'Tag & Title Type',
-              ),
+              decoration: const InputDecoration(labelText: 'Tag & Title Type'),
             ),
             if (_tagType == TagType.custom) ...[
               const SizedBox(height: 12),
               TextFormField(
                 controller: _customTagFeeController,
+                focusNode: _customTagFeeFocus,
                 decoration: const InputDecoration(
                   labelText: 'Custom Tag Fee',
                   prefixText: '\$',
                 ),
                 keyboardType: TextInputType.number,
                 textInputAction: TextInputAction.next,
-                validator: (v) => _tagType == TagType.custom
-                    ? _nonNegativeValidator(v, required: true)
-                    : null,
+                validator:
+                    (v) =>
+                        _tagType == TagType.custom
+                            ? _nonNegativeValidator(v, required: true)
+                            : null,
+                onFieldSubmitted: (_) {
+                  if (_taxOutsideFl) {
+                    _stateFocus.requestFocus();
+                  } else {
+                    _calculate();
+                  }
+                },
               ),
             ],
 
@@ -397,20 +458,23 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _stateController,
+                focusNode: _stateFocus,
                 decoration: const InputDecoration(
                   labelText: 'Tax State (e.g., GA, NY)',
                 ),
                 textInputAction: TextInputAction.next,
+                onFieldSubmitted: (_) => _customTaxRateFocus.requestFocus(),
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _customTaxRateController,
+                focusNode: _customTaxRateFocus,
                 decoration: const InputDecoration(
                   labelText: 'Custom Tax Rate',
                   suffixText: '%',
                 ),
                 keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.next,
+                textInputAction: TextInputAction.done,
                 validator: (v) {
                   if (!_taxOutsideFl) return null;
                   final basic = _nonNegativeValidator(v, required: true);
@@ -419,6 +483,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   if (rate > 100) return 'Must be ≤ 100';
                   return null;
                 },
+                onFieldSubmitted: (_) => _calculate(),
               ),
               if (isNew) ...[
                 const SizedBox(height: 8),
@@ -435,7 +500,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               ],
             ],
 
-                        const SizedBox(height: 24),
+            const SizedBox(height: 24),
             Row(
               children: [
                 ElevatedButton(
@@ -470,7 +535,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
         if (isNew) ...[
           _row('M.S.R.P.', _formatMoney(result.msrp)),
-          _row('+ Additional Equipment', _formatMoney(result.additionalEquipment)),
+          _row(
+            '+ Additional Equipment',
+            _formatMoney(result.additionalEquipment),
+          ),
           _row('- Discount', _formatMoney(result.discount)),
           _totalRow('= Selling Price', _formatMoney(result.sellPrice)),
           const Divider(),
@@ -478,7 +546,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
           _row('+ FL Waste Tire Fee', _formatMoney(result.floridaWasteTireFee)),
           _row('+ FL Battery Fee', _formatMoney(result.floridaBatteryFee)),
           _row('+ Dealer Fee', _formatMoney(result.dealerFee)),
-          _row('+ Private Tag Agency Fee', _formatMoney(result.privateTagAgencyFee)),
+          _row(
+            '+ Private Tag Agency Fee',
+            _formatMoney(result.privateTagAgencyFee),
+          ),
           _totalRow('= Total Taxable', _formatMoney(result.totalTaxable)),
           const Divider(),
           _row(
@@ -505,10 +576,16 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
           _row('- Down Payment', _formatMoney(result.downPayment)),
         ] else ...[
           _row('Selling Price', _formatMoney(result.sellingPriceInput)),
-          _row('+ Additional Equipment', _formatMoney(result.additionalEquipment)),
+          _row(
+            '+ Additional Equipment',
+            _formatMoney(result.additionalEquipment),
+          ),
           _row('- Trade Allowance', _formatMoney(result.tradeAllowance)),
           _row('+ Dealer Fee', _formatMoney(result.dealerFee)),
-          _row('+ Private Tag Agency Fee', _formatMoney(result.privateTagAgencyFee)),
+          _row(
+            '+ Private Tag Agency Fee',
+            _formatMoney(result.privateTagAgencyFee),
+          ),
           _totalRow('= Total Taxable', _formatMoney(result.totalTaxable)),
           const Divider(),
           _row(
@@ -524,10 +601,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
         const SizedBox(height: 12),
         const Divider(),
-        _totalRow(
-          'Amount to Finance',
-          _formatMoney(result.amountToFinance),
-        ),
+        _totalRow('Amount to Finance', _formatMoney(result.amountToFinance)),
         const SizedBox(height: 16),
         if (widget.onUseInPayment != null)
           Align(
@@ -546,19 +620,14 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
   Widget _row(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(
-        children: [
-          Expanded(child: Text(label)),
-          Text(value),
-        ],
-      ),
+      child: Row(children: [Expanded(child: Text(label)), Text(value)]),
     );
   }
 
   Widget _totalRow(String label, String value) {
-    final style = Theme.of(context).textTheme.bodyLarge?.copyWith(
-          fontWeight: FontWeight.bold,
-        );
+    final style = Theme.of(
+      context,
+    ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

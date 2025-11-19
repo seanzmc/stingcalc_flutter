@@ -32,15 +32,16 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     super.initState();
     _rateController.text = '6.9';
     _termController.text = '72';
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _paymentFocusNode.requestFocus(); // first field on this screen
-    });
   }
 
   void _clearForm() {
     _paymentController.clear();
     _rateController.text = '6.9';
     _termController.text = '72';
+
+    // Reset focus to the first field
+    _paymentFocusNode.requestFocus();
+
     setState(() {
       _disableDocStamps = false;
       _loanAmount = null;
@@ -129,6 +130,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
             TextFormField(
               controller: _paymentController,
               focusNode: _paymentFocusNode,
+              autofocus: true, // Focus immediately
               decoration: const InputDecoration(
                 labelText: 'Desired Payment',
                 prefixText: '\$',
