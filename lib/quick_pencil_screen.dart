@@ -15,6 +15,7 @@ class QuickPencilScreen extends StatefulWidget {
 
 class _QuickPencilScreenState extends State<QuickPencilScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _scrollController = ScrollController();
 
   // Basic info
   final _clientNameController = TextEditingController();
@@ -88,6 +89,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
   @override
   void dispose() {
+    _scrollController.dispose();
     _clientNameController.dispose();
     _msrpController.dispose();
     _discountController.dispose();
@@ -184,6 +186,16 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
         _result = result;
         _errorMessage = null;
       });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+          );
+        }
+      });
     } on ArgumentError catch (e) {
       setState(() {
         _errorMessage = e.message?.toString() ?? 'Invalid input value.';
@@ -217,6 +229,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
       child: Form(
         key: _formKey,
         child: ListView(
+          controller: _scrollController,
           children: [
             Text(
               'Quick Pencil',
