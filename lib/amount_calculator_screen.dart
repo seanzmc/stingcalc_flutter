@@ -38,8 +38,6 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     _paymentController.clear();
     _rateController.text = '6.9';
     _termController.text = '72';
-
-    // Reset focus to the first field
     _paymentFocusNode.requestFocus();
 
     setState(() {
@@ -56,11 +54,9 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     _paymentController.dispose();
     _rateController.dispose();
     _termController.dispose();
-
     _paymentFocusNode.dispose();
     _rateFocusNode.dispose();
     _termFocusNode.dispose();
-
     super.dispose();
   }
 
@@ -72,6 +68,16 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     if (v == null) return 'Enter a number';
     if (v <= 0) return 'Must be > 0';
     return null;
+  }
+
+  String _formatCurrency(double value) {
+    final numberStr = value.toStringAsFixed(2);
+    final parts = numberStr.split('.');
+    final integerPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '\$$integerPart.${parts[1]}';
   }
 
   void _calculate() {
@@ -130,12 +136,13 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
             TextFormField(
               controller: _paymentController,
               focusNode: _paymentFocusNode,
-              autofocus: true, // Focus immediately
+              autofocus: true,
               decoration: const InputDecoration(
                 labelText: 'Desired Payment',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _requiredNumberValidator,
               onFieldSubmitted: (_) {
@@ -150,7 +157,8 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
                 labelText: 'APR',
                 suffixText: '%',
               ),
-              keyboardType: TextInputType.number,
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _requiredNumberValidator,
               onFieldSubmitted: (_) {
@@ -207,16 +215,16 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '\$${_loanAmount!.toStringAsFixed(2)}',
+                _formatCurrency(_loanAmount!),
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 16),
               if (_docStamps != null)
                 Text(
-                  'Documentary Stamp Tax: \$${_docStamps!.toStringAsFixed(2)}',
+                  'Documentary Stamp Tax: ${_formatCurrency(_docStamps!)}',
                 ),
               if (_totalLoan != null)
-                Text('Total Loan Amount: \$${_totalLoan!.toStringAsFixed(2)}'),
+                Text('Total Loan Amount: ${_formatCurrency(_totalLoan!)}'),
             ],
           ],
         ),

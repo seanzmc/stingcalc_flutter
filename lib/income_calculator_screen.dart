@@ -57,10 +57,9 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
 
   Future<void> _pickDate({required bool isCheckDate}) async {
     final now = DateTime.now();
-    final initial =
-        isCheckDate
-            ? (_checkDate ?? now)
-            : (_hireDate ?? DateTime(now.year, 1, 1));
+    final initial = isCheckDate
+        ? (_checkDate ?? now)
+        : (_hireDate ?? DateTime(now.year, 1, 1));
 
     final picked = await showDatePicker(
       context: context,
@@ -131,6 +130,16 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
     return null;
   }
 
+  String _formatCurrency(double value) {
+    final numberStr = value.toStringAsFixed(2);
+    final parts = numberStr.split('.');
+    final integerPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '\$$integerPart.${parts[1]}';
+  }
+
   void _calculate() {
     if (!_formKey.currentState!.validate()) return;
 
@@ -189,13 +198,14 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             TextFormField(
               controller: _ytdController,
               focusNode: _ytdFocusNode,
-              autofocus: true, // Focus immediately when screen appears
+              autofocus: true,
               decoration: const InputDecoration(
                 labelText: 'Year-to-Date Gross Income',
                 prefixText: '\$',
                 border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.numberWithOptions(decimal: true),
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
                 FocusScope.of(context).requestFocus(_checkDateFocusNode);
@@ -281,7 +291,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '\$${_monthlyIncome!.toStringAsFixed(2)}',
+                _formatCurrency(_monthlyIncome!),
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               const SizedBox(height: 16),
@@ -291,7 +301,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '\$${_annualIncome!.toStringAsFixed(2)}',
+                _formatCurrency(_annualIncome!),
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ],

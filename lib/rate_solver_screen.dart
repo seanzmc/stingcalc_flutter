@@ -15,7 +15,6 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   final _paymentController = TextEditingController();
   final _termController = TextEditingController();
 
-  // FocusNodes for explicit control
   final _principalFocusNode = FocusNode();
   final _paymentFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
@@ -35,7 +34,6 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     _paymentController.clear();
     _termController.text = '72';
 
-    // Reset focus to the first field
     _principalFocusNode.requestFocus();
 
     setState(() {
@@ -102,10 +100,9 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     setState(() {
       _errorMessage = null;
       _ratePercent = rate;
-      _message =
-          rate == null
-              ? 'Unable to calculate a valid rate. Check the payment and term.'
-              : null;
+      _message = rate == null
+          ? 'Unable to calculate a valid rate. Check the payment and term.'
+          : null;
     });
   }
 
@@ -135,12 +132,13 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             TextFormField(
               controller: _principalController,
               focusNode: _principalFocusNode,
-              autofocus: true, // Focus immediately
+              autofocus: true,
               decoration: const InputDecoration(
                 labelText: 'Loan Amount / Principal',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
                 FocusScope.of(context).requestFocus(_paymentFocusNode);
@@ -155,7 +153,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
                 labelText: 'Target Payment',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               onFieldSubmitted: (_) {
                 FocusScope.of(context).requestFocus(_termFocusNode);
@@ -166,7 +165,9 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             TextFormField(
               controller: _termController,
               focusNode: _termFocusNode,
-              decoration: const InputDecoration(labelText: 'Term (months)'),
+              decoration: const InputDecoration(
+                labelText: 'Term (months)',
+              ),
               keyboardType: TextInputType.number,
               textInputAction: TextInputAction.done,
               validator: (value) {
@@ -207,7 +208,9 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             ] else if (_message != null) ...[
               Text(
                 _message!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                ),
               ),
             ],
           ],

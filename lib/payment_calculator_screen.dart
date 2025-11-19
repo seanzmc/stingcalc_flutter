@@ -18,7 +18,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   final _rateController = TextEditingController();
   final _termController = TextEditingController();
 
-  // FocusNodes to manage keyboard flow
   final _loanFocusNode = FocusNode();
   final _rateFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
@@ -38,7 +37,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     if (widget.initialLoanAmount != null) {
       _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
     }
-    // sensible defaults
     _rateController.text = '6.9';
     _termController.text = '72';
   }
@@ -46,7 +44,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   @override
   void didUpdateWidget(covariant PaymentCalculatorScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // When a new amount comes from Quick Pencil, update the field
     if (widget.initialLoanAmount != null &&
         widget.initialLoanAmount != oldWidget.initialLoanAmount) {
       _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
@@ -57,8 +54,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     _loanAmountController.clear();
     _rateController.text = '6.9';
     _termController.text = '72';
-
-    // Reset focus to the first field
     _loanFocusNode.requestFocus();
 
     setState(() {
@@ -76,11 +71,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     _loanAmountController.dispose();
     _rateController.dispose();
     _termController.dispose();
-
     _loanFocusNode.dispose();
     _rateFocusNode.dispose();
     _termFocusNode.dispose();
-
     super.dispose();
   }
 
@@ -92,6 +85,17 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     if (v == null) return 'Enter a number';
     if (v <= 0) return 'Must be > 0';
     return null;
+  }
+
+  // Formatting helper for commas
+  String _formatCurrency(double value) {
+    final numberStr = value.toStringAsFixed(2);
+    final parts = numberStr.split('.');
+    final integerPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '\$$integerPart.${parts[1]}';
   }
 
   void _calculate() {
@@ -111,7 +115,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     final rate = double.parse(_rateController.text);
     final term = int.parse(_termController.text);
 
-    // Florida doc stamps on note
     final docStamps = _disableDocStamps ? 0.0 : LoanMath.docStamps(loanAmount);
     final principalWithTax = loanAmount + docStamps;
 
@@ -158,12 +161,13 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             TextFormField(
               controller: _loanAmountController,
               focusNode: _loanFocusNode,
-              autofocus: true, // Automatically focuses when screen appears
+              autofocus: true,
               decoration: const InputDecoration(
                 labelText: 'Loan Amount',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _requiredNumberValidator,
               onFieldSubmitted: (_) {
@@ -178,14 +182,14 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
                 labelText: 'APR',
                 suffixText: '%',
               ),
-              keyboardType: TextInputType.number,
+              // Updated keyboard type
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _requiredNumberValidator,
               onFieldSubmitted: (_) {
                 FocusScope.of(context).requestFocus(_termFocusNode);
               },
             ),
-
             const SizedBox(height: 12),
             TextFormField(
               controller: _termController,
@@ -238,18 +242,18 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '\$${_payment!.toStringAsFixed(2)} / month',
+                '${_formatCurrency(_payment!)} / month',
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               const SizedBox(height: 16),
               if (_docStamps != null)
                 Text(
-                  'Documentary Stamp Tax: \$${_docStamps!.toStringAsFixed(2)}',
+                  'Documentary Stamp Tax: ${_formatCurrency(_docStamps!)}',
                 ),
               if (_totalLoan != null)
-                Text('Total Loan Amount: \$${_totalLoan!.toStringAsFixed(2)}'),
+                Text('Total Loan Amount: ${_formatCurrency(_totalLoan!)}'),
               if (_totalCost != null)
-                Text('Total Cost of Loan: \$${_totalCost!.toStringAsFixed(2)}'),
+                Text('Total Cost of Loan: ${_formatCurrency(_totalCost!)}'),
             ],
           ],
         ),

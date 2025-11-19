@@ -4,7 +4,10 @@ import 'engine/quick_pencil_engine.dart';
 class QuickPencilScreen extends StatefulWidget {
   final void Function(double amountToFinance)? onUseInPayment;
 
-  const QuickPencilScreen({super.key, this.onUseInPayment});
+  const QuickPencilScreen({
+    super.key,
+    this.onUseInPayment,
+  });
 
   @override
   State<QuickPencilScreen> createState() => _QuickPencilScreenState();
@@ -71,7 +74,6 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     _stateController.clear();
     _customTaxRateController.text = '6.0';
 
-    // Reset focus to top
     _clientNameFocus.requestFocus();
 
     setState(() {
@@ -149,10 +151,9 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     final tradePayoff = parseOrZero(_tradePayoffController);
     final downPayment = parseOrZero(_downPaymentController);
 
-    final customTagFee =
-        _tagType == TagType.custom
-            ? double.tryParse(_customTagFeeController.text.trim())
-            : null;
+    final customTagFee = _tagType == TagType.custom
+        ? double.tryParse(_customTagFeeController.text.trim())
+        : null;
 
     final customTaxRate =
         double.tryParse(_customTaxRateController.text.trim()) ?? 0.0;
@@ -197,7 +198,15 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     }
   }
 
-  String _formatMoney(double value) => '\$${value.toStringAsFixed(2)}';
+  String _formatMoney(double value) {
+    final numberStr = value.toStringAsFixed(2);
+    final parts = numberStr.split('.');
+    final integerPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '\$$integerPart.${parts[1]}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -209,7 +218,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
         key: _formKey,
         child: ListView(
           children: [
-            Text('Quick Pencil', style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              'Quick Pencil',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             if (_errorMessage != null) ...[
               Text(
@@ -225,8 +237,14 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             // Sale type toggle
             SegmentedButton<SaleType>(
               segments: const [
-                ButtonSegment(value: SaleType.newVehicle, label: Text('NEW')),
-                ButtonSegment(value: SaleType.usedVehicle, label: Text('USED')),
+                ButtonSegment(
+                  value: SaleType.newVehicle,
+                  label: Text('NEW'),
+                ),
+                ButtonSegment(
+                  value: SaleType.usedVehicle,
+                  label: Text('USED'),
+                ),
               ],
               selected: <SaleType>{_saleType},
               onSelectionChanged: (set) {
@@ -242,7 +260,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             TextFormField(
               controller: _clientNameController,
               focusNode: _clientNameFocus,
-              autofocus: true, // Top field focus
+              autofocus: true,
               decoration: const InputDecoration(
                 labelText: 'Client Name (optional)',
               ),
@@ -266,7 +284,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'M.S.R.P.',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
                 validator: (v) => _nonNegativeValidator(v, required: true),
                 onFieldSubmitted: (_) => _additionalEqFocus.requestFocus(),
@@ -279,7 +297,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Additional Equipment',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
                 onFieldSubmitted: (_) => _discountFocus.requestFocus(),
@@ -292,7 +310,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Discount',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
                 onFieldSubmitted: (_) => _rebatesFocus.requestFocus(),
@@ -305,7 +323,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Rebates',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
                 onFieldSubmitted: (_) => _tradeAllowanceFocus.requestFocus(),
@@ -318,7 +336,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Selling Price',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
                 validator: (v) => _nonNegativeValidator(v, required: true),
                 onFieldSubmitted: (_) => _additionalEqFocus.requestFocus(),
@@ -331,7 +349,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Additional Equipment',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
                 validator: _nonNegativeValidator,
                 onFieldSubmitted: (_) => _tradeAllowanceFocus.requestFocus(),
@@ -348,7 +366,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 labelText: 'Trade Allowance',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _nonNegativeValidator,
               onFieldSubmitted: (_) => _tradePayoffFocus.requestFocus(),
@@ -361,7 +379,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 labelText: 'Trade Payoff',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _nonNegativeValidator,
               onFieldSubmitted: (_) => _downPaymentFocus.requestFocus(),
@@ -374,7 +392,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                 labelText: 'Customer Cash / Down Payment',
                 prefixText: '\$',
               ),
-              keyboardType: TextInputType.number,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
               textInputAction: TextInputAction.next,
               validator: _nonNegativeValidator,
               onFieldSubmitted: (_) {
@@ -394,7 +412,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             DropdownButtonFormField<TagType>(
               initialValue: _tagType,
               items: const [
-                DropdownMenuItem(value: TagType.newTag, child: Text('New Tag')),
+                DropdownMenuItem(
+                  value: TagType.newTag,
+                  child: Text('New Tag'),
+                ),
                 DropdownMenuItem(
                   value: TagType.transfer,
                   child: Text('Transfer Tag'),
@@ -410,7 +431,9 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   _tagType = value;
                 });
               },
-              decoration: const InputDecoration(labelText: 'Tag & Title Type'),
+              decoration: const InputDecoration(
+                labelText: 'Tag & Title Type',
+              ),
             ),
             if (_tagType == TagType.custom) ...[
               const SizedBox(height: 12),
@@ -421,13 +444,11 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Custom Tag Fee',
                   prefixText: '\$',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.next,
-                validator:
-                    (v) =>
-                        _tagType == TagType.custom
-                            ? _nonNegativeValidator(v, required: true)
-                            : null,
+                validator: (v) => _tagType == TagType.custom
+                    ? _nonNegativeValidator(v, required: true)
+                    : null,
                 onFieldSubmitted: (_) {
                   if (_taxOutsideFl) {
                     _stateFocus.requestFocus();
@@ -473,7 +494,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
                   labelText: 'Custom Tax Rate',
                   suffixText: '%',
                 ),
-                keyboardType: TextInputType.number,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 textInputAction: TextInputAction.done,
                 validator: (v) {
                   if (!_taxOutsideFl) return null;
@@ -535,10 +556,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
         if (isNew) ...[
           _row('M.S.R.P.', _formatMoney(result.msrp)),
-          _row(
-            '+ Additional Equipment',
-            _formatMoney(result.additionalEquipment),
-          ),
+          _row('+ Additional Equipment', _formatMoney(result.additionalEquipment)),
           _row('- Discount', _formatMoney(result.discount)),
           _totalRow('= Selling Price', _formatMoney(result.sellPrice)),
           const Divider(),
@@ -546,10 +564,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
           _row('+ FL Waste Tire Fee', _formatMoney(result.floridaWasteTireFee)),
           _row('+ FL Battery Fee', _formatMoney(result.floridaBatteryFee)),
           _row('+ Dealer Fee', _formatMoney(result.dealerFee)),
-          _row(
-            '+ Private Tag Agency Fee',
-            _formatMoney(result.privateTagAgencyFee),
-          ),
+          _row('+ Private Tag Agency Fee', _formatMoney(result.privateTagAgencyFee)),
           _totalRow('= Total Taxable', _formatMoney(result.totalTaxable)),
           const Divider(),
           _row(
@@ -576,16 +591,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
           _row('- Down Payment', _formatMoney(result.downPayment)),
         ] else ...[
           _row('Selling Price', _formatMoney(result.sellingPriceInput)),
-          _row(
-            '+ Additional Equipment',
-            _formatMoney(result.additionalEquipment),
-          ),
+          _row('+ Additional Equipment', _formatMoney(result.additionalEquipment)),
           _row('- Trade Allowance', _formatMoney(result.tradeAllowance)),
           _row('+ Dealer Fee', _formatMoney(result.dealerFee)),
-          _row(
-            '+ Private Tag Agency Fee',
-            _formatMoney(result.privateTagAgencyFee),
-          ),
+          _row('+ Private Tag Agency Fee', _formatMoney(result.privateTagAgencyFee)),
           _totalRow('= Total Taxable', _formatMoney(result.totalTaxable)),
           const Divider(),
           _row(
@@ -601,7 +610,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
         const SizedBox(height: 12),
         const Divider(),
-        _totalRow('Amount to Finance', _formatMoney(result.amountToFinance)),
+        _totalRow(
+          'Amount to Finance',
+          _formatMoney(result.amountToFinance),
+        ),
         const SizedBox(height: 16),
         if (widget.onUseInPayment != null)
           Align(
@@ -620,14 +632,19 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
   Widget _row(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
-      child: Row(children: [Expanded(child: Text(label)), Text(value)]),
+      child: Row(
+        children: [
+          Expanded(child: Text(label)),
+          Text(value),
+        ],
+      ),
     );
   }
 
   Widget _totalRow(String label, String value) {
-    final style = Theme.of(
-      context,
-    ).textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold);
+    final style = Theme.of(context).textTheme.bodyLarge?.copyWith(
+          fontWeight: FontWeight.bold,
+        );
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(

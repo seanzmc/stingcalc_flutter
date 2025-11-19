@@ -63,19 +63,26 @@ class _StingcalcHomeState extends State<StingcalcHome>
     return Scaffold(
       appBar: AppBar(
         title: const Text('Stingcalc v0.1.3'),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'Payment'),
-            Tab(text: 'Amount'),
-            Tab(text: 'Rate'),
-            Tab(text: 'Income'),
-            Tab(text: 'Quick Pencil'),
-          ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(48),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 600),
+              child: TabBar(
+                controller: _tabController,
+                isScrollable: false, // Tabs fill the 600px container evenly
+                tabs: const [
+                  Tab(text: 'Payment'),
+                  Tab(text: 'Amount'),
+                  Tab(text: 'Rate'),
+                  Tab(text: 'Income'),
+                  Tab(text: 'Quick Pencil'),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
-      // Containerize the body content
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 600),
