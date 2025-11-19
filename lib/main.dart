@@ -75,15 +75,21 @@ class _StingcalcHomeState extends State<StingcalcHome>
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          PaymentCalculatorScreen(initialLoanAmount: _qpAmount),
-          const AmountCalculatorScreen(),
-          const RateSolverScreen(),
-          const IncomeCalculatorScreen(),
-          QuickPencilScreen(onUseInPayment: _handleUseInPayment),
-        ],
+      // Containerize the body content
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 600),
+          child: TabBarView(
+            controller: _tabController,
+            children: [
+              PaymentCalculatorScreen(initialLoanAmount: _qpAmount),
+              const AmountCalculatorScreen(),
+              const RateSolverScreen(),
+              const IncomeCalculatorScreen(),
+              QuickPencilScreen(onUseInPayment: _handleUseInPayment),
+            ],
+          ),
+        ),
       ),
     );
   }
