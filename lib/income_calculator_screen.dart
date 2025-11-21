@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'widgets/data_readout.dart';
 
 class IncomeCalculatorScreen extends StatefulWidget {
   const IncomeCalculatorScreen({super.key});
@@ -16,10 +18,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   final _checkDateController = TextEditingController();
   final _hireDateController = TextEditingController();
 
-  final _ytdFocusNode = FocusNode();
-  final _checkDateFocusNode = FocusNode();
-  final _hireDateFocusNode = FocusNode();
-
   DateTime? _checkDate;
   DateTime? _hireDate;
 
@@ -27,13 +25,18 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   double? _annualIncome;
   String? _error;
 
+  @override
+  void dispose() {
+    _ytdController.dispose();
+    _checkDateController.dispose();
+    _hireDateController.dispose();
+    super.dispose();
+  }
+
   void _clearForm() {
     _ytdController.clear();
     _checkDateController.clear();
     _hireDateController.clear();
-
-    _ytdFocusNode.requestFocus();
-
     setState(() {
       _checkDate = null;
       _hireDate = null;
@@ -41,18 +44,6 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
       _annualIncome = null;
       _error = null;
     });
-  }
-
-  @override
-  void dispose() {
-    _ytdController.dispose();
-    _checkDateController.dispose();
-    _hireDateController.dispose();
-
-    _ytdFocusNode.dispose();
-    _checkDateFocusNode.dispose();
-    _hireDateFocusNode.dispose();
-    super.dispose();
   }
 
   Future<void> _pickDate({required bool isCheckDate}) async {
@@ -66,6 +57,19 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
       initialDate: initial,
       firstDate: DateTime(1990),
       lastDate: DateTime(now.year + 3),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+              primary: Theme.of(context).colorScheme.primary,
+              onPrimary: Theme.of(context).colorScheme.onPrimary,
+              surface: Theme.of(context).colorScheme.surface,
+              onSurface: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
 
     if (picked != null) {
@@ -74,11 +78,11 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
         if (isCheckDate) {
           _checkDate = picked;
           _checkDateController.text = formatted;
-          FocusScope.of(context).requestFocus(_hireDateFocusNode);
         } else {
           _hireDate = picked;
           _hireDateController.text = formatted;
         }
+        _calculate();
       });
     }
   }
@@ -99,6 +103,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             } else {
               _hireDate = date;
             }
+            _calculate();
           });
           return;
         }
@@ -112,47 +117,19 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
     }
   }
 
-  String? _requiredNumberValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Required';
-    }
-    final v = double.tryParse(value);
-    if (v == null) return 'Enter a number';
-    if (v < 0) return 'Must be ≥ 0';
-    return null;
-  }
-
-  String? _dateValidator(String? value, bool required) {
-    if (!required && (value == null || value.isEmpty)) return null;
-    if (required && (value == null || value.isEmpty)) return 'Required';
-    if (value!.length != 10) return 'Enter MM/DD/YYYY';
-    if (required && _checkDate == null) return 'Invalid date';
-    return null;
-  }
-
-  String _formatCurrency(double value) {
-    final numberStr = value.toStringAsFixed(2);
-    final parts = numberStr.split('.');
-    final integerPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '\$$integerPart.${parts[1]}';
-  }
-
   void _calculate() {
     if (!_formKey.currentState!.validate()) return;
 
     if (_checkDate == null) {
       setState(() {
-        _error = 'Please enter a valid check date.';
         _monthlyIncome = null;
         _annualIncome = null;
       });
       return;
     }
 
-    final ytd = double.parse(_ytdController.text);
+    final ytd = double.tryParse(_ytdController.text);
+    if (ytd == null) return;
 
     final monthly = IncomeCalculator.monthlyIncome(
       ytdAmount: ytd,
@@ -182,47 +159,98 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
         '${date.year}';
   }
 
+  String _formatCurrency(double value) {
+    final numberStr = value.toStringAsFixed(2);
+    final parts = numberStr.split('.');
+    final integerPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+    return '\$$integerPart.${parts[1]}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _formKey,
-        child: ListView(
-          children: [
-            Text(
-              'Income Calculator',
-              style: Theme.of(context).textTheme.titleLarge,
+    final theme = Theme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 800),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'INCOME CALCULATOR (YTD)',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: theme.colorScheme.secondary,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                if (isDesktop)
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildInputs(context)),
+                      const SizedBox(width: 32),
+                      Expanded(child: _buildResults(context)),
+                    ],
+                  )
+                else ...[
+                  _buildInputs(context),
+                  const SizedBox(height: 32),
+                  _buildResults(context),
+                ],
+              ],
             ),
-            const SizedBox(height: 12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputs(BuildContext context) {
+    return Card(
+      elevation: 0,
+      color: Theme.of(context).colorScheme.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          children: [
             TextFormField(
               controller: _ytdController,
-              focusNode: _ytdFocusNode,
-              autofocus: true,
               decoration: const InputDecoration(
-                labelText: 'Year-to-Date Gross Income',
-                prefixText: '\$',
-                border: OutlineInputBorder(),
+                labelText: 'Year-to-Date Gross',
+                prefixText: '\$ ',
+                prefixIcon: Icon(Icons.attach_money),
               ),
-              // Updated keyboard type
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) {
-                FocusScope.of(context).requestFocus(_checkDateFocusNode);
-              },
-              validator: _requiredNumberValidator,
+              onChanged: (_) => _calculate(),
+              validator: (v) =>
+                  (v == null || v.isEmpty) ? 'Required' : null,
             ),
-            const SizedBox(height: 12),
-
+            const SizedBox(height: 16),
             TextFormField(
               controller: _checkDateController,
-              focusNode: _checkDateFocusNode,
               decoration: InputDecoration(
-                labelText: 'Check Date (MM/DD/YYYY)',
+                labelText: 'Check Date',
                 hintText: 'MM/DD/YYYY',
-                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.calendar_today),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
+                  icon: const Icon(Icons.event),
                   onPressed: () => _pickDate(isCheckDate: true),
                 ),
               ),
@@ -232,24 +260,16 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
                 _DateTextFormatter(),
               ],
               onChanged: (v) => _onDateTextChanged(v, true),
-              validator: (v) => _dateValidator(v, true),
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) {
-                FocusScope.of(context).requestFocus(_hireDateFocusNode);
-              },
             ),
-
-            const SizedBox(height: 12),
-
+            const SizedBox(height: 16),
             TextFormField(
               controller: _hireDateController,
-              focusNode: _hireDateFocusNode,
               decoration: InputDecoration(
-                labelText: 'Hire Date (optional)',
+                labelText: 'Hire Date (Optional)',
                 hintText: 'MM/DD/YYYY',
-                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.work_outline),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.calendar_today),
+                  icon: const Icon(Icons.event),
                   onPressed: () => _pickDate(isCheckDate: false),
                 ),
               ),
@@ -259,55 +279,66 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
                 _DateTextFormatter(),
               ],
               onChanged: (v) => _onDateTextChanged(v, false),
-              validator: (v) => _dateValidator(v, false),
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) => _calculate(),
-            ),
-
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _calculate,
-                  child: const Text('Estimate Income'),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: _clearForm,
-                  child: const Text('Clear'),
-                ),
-              ],
             ),
             const SizedBox(height: 24),
-            if (_error != null)
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _clearForm,
+                icon: const Icon(Icons.refresh),
+                label: const Text('RESET'),
               ),
-            if (_monthlyIncome != null && _annualIncome != null) ...[
-              Text(
-                'Estimated Monthly Gross Income',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _formatCurrency(_monthlyIncome!),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Estimated Annual Gross Income',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _formatCurrency(_annualIncome!),
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-            ],
+            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildResults(BuildContext context) {
+    if (_error != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline,
+                color: Theme.of(context).colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        DataReadout(
+          label: 'Monthly Gross',
+          value: _monthlyIncome != null
+              ? _formatCurrency(_monthlyIncome!)
+              : '---',
+          isLarge: true,
+          icon: Icons.calendar_view_month,
+        ),
+        const SizedBox(height: 16),
+        DataReadout(
+          label: 'Annual Salary',
+          value: _annualIncome != null
+              ? _formatCurrency(_annualIncome!)
+              : '---',
+          valueColor: Theme.of(context).colorScheme.secondary,
+          icon: Icons.calendar_today,
+        ),
+      ],
     );
   }
 }

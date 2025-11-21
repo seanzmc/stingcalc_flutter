@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'widgets/data_readout.dart';
 
 class RateSolverScreen extends StatefulWidget {
   const RateSolverScreen({super.key});
@@ -13,80 +15,48 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
 
   final _principalController = TextEditingController();
   final _paymentController = TextEditingController();
-  final _termController = TextEditingController();
-
-  final _principalFocusNode = FocusNode();
-  final _paymentFocusNode = FocusNode();
-  final _termFocusNode = FocusNode();
+  final _termController = TextEditingController(text: '72');
 
   double? _ratePercent;
   String? _message;
-  String? _errorMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _termController.text = '72';
-  }
-
-  void _clearForm() {
-    _principalController.clear();
-    _paymentController.clear();
-    _termController.text = '72';
-
-    _principalFocusNode.requestFocus();
-
-    setState(() {
-      _ratePercent = null;
-      _message = null;
-      _errorMessage = null;
-    });
-  }
 
   @override
   void dispose() {
     _principalController.dispose();
     _paymentController.dispose();
     _termController.dispose();
-
-    _principalFocusNode.dispose();
-    _paymentFocusNode.dispose();
-    _termFocusNode.dispose();
     super.dispose();
   }
 
-  String? _requiredNumberValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Required';
-    }
-    final v = double.tryParse(value);
-    if (v == null) return 'Enter a number';
-    if (v <= 0) return 'Must be > 0';
-    return null;
+  void _clearForm() {
+    _principalController.clear();
+    _paymentController.clear();
+    _termController.text = '72';
+    setState(() {
+      _ratePercent = null;
+      _message = null;
+    });
   }
 
   void _calculate() {
-    final valid = _formKey.currentState!.validate();
-    if (!valid) {
+    final principal = double.tryParse(_principalController.text);
+    final payment = double.tryParse(_paymentController.text);
+    final term = int.tryParse(_termController.text);
+
+    if (principal == null || payment == null || term == null || term <= 0) {
       setState(() {
-        _errorMessage = 'Please fix the highlighted fields.';
         _ratePercent = null;
+        _message = null;
       });
       return;
     }
 
-    final principal = double.parse(_principalController.text);
-    final payment = double.parse(_paymentController.text);
-    final term = int.parse(_termController.text);
-
     final minPayment = principal / term;
     if (payment < minPayment) {
       setState(() {
-        _errorMessage = null;
         _ratePercent = null;
         _message =
-            'Payment too low to amortize loan. Minimum possible payment is '
-            '\$${minPayment.toStringAsFixed(2)}.';
+            'Payment too low. Min: \$${minPayment.toStringAsFixed(2)}';
       });
       return;
     }
@@ -98,122 +68,127 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     );
 
     setState(() {
-      _errorMessage = null;
       _ratePercent = rate;
-      _message = rate == null
-          ? 'Unable to calculate a valid rate. Check the payment and term.'
-          : null;
+      _message = rate == null ? 'Unable to solve' : null;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _formKey,
-        child: ListView(
-          children: [
-            Text(
-              'Interest Rate Solver',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            if (_errorMessage != null) ...[
+    final theme = Theme.of(context);
+
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
               Text(
-                _errorMessage!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w600,
+                'RATE SOLVER',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.secondary,
+                  letterSpacing: 1.2,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 24),
+              Card(
+                elevation: 0,
+                color: theme.colorScheme.surface,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  side: BorderSide(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _principalController,
+                          decoration: const InputDecoration(
+                            labelText: 'Loan Amount',
+                            prefixText: '\$ ',
+                            prefixIcon: Icon(Icons.account_balance),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (_) => _calculate(),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _paymentController,
+                          decoration: const InputDecoration(
+                            labelText: 'Target Payment',
+                            prefixText: '\$ ',
+                            prefixIcon: Icon(Icons.payments),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          onChanged: (_) => _calculate(),
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _termController,
+                          decoration: const InputDecoration(
+                            labelText: 'Term (Months)',
+                            prefixIcon: Icon(Icons.calendar_today),
+                          ),
+                          keyboardType: TextInputType.number,
+                          onChanged: (_) => _calculate(),
+                        ),
+                        const SizedBox(height: 24),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            onPressed: _clearForm,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('RESET'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 32),
+              if (_message != null)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.errorContainer,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.error_outline,
+                          color: theme.colorScheme.error),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          _message!,
+                          style: TextStyle(color: theme.colorScheme.error),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                DataReadout(
+                  label: 'REQUIRED APR',
+                  value: _ratePercent != null
+                      ? '${_ratePercent!.toStringAsFixed(2)}%'
+                      : '---',
+                  isLarge: true,
+                  valueColor: theme.colorScheme.primary,
+                  icon: Icons.percent,
+                ),
             ],
-            TextFormField(
-              controller: _principalController,
-              focusNode: _principalFocusNode,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Loan Amount / Principal',
-                prefixText: '\$',
-              ),
-              // Updated keyboard type
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) {
-                FocusScope.of(context).requestFocus(_paymentFocusNode);
-              },
-              validator: _requiredNumberValidator,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _paymentController,
-              focusNode: _paymentFocusNode,
-              decoration: const InputDecoration(
-                labelText: 'Target Payment',
-                prefixText: '\$',
-              ),
-              // Updated keyboard type
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              onFieldSubmitted: (_) {
-                FocusScope.of(context).requestFocus(_termFocusNode);
-              },
-              validator: _requiredNumberValidator,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _termController,
-              focusNode: _termFocusNode,
-              decoration: const InputDecoration(
-                labelText: 'Term (months)',
-              ),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              validator: (value) {
-                final basic = _requiredNumberValidator(value);
-                if (basic != null) return basic;
-                final v = int.tryParse(value!.trim());
-                if (v == null) return 'Enter a whole number';
-                if (v <= 0) return 'Term must be > 0';
-                return null;
-              },
-              onFieldSubmitted: (_) => _calculate(),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _calculate,
-                  child: const Text('Solve for Rate'),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: _clearForm,
-                  child: const Text('Clear'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            if (_ratePercent != null) ...[
-              Text(
-                'Required APR',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${_ratePercent!.toStringAsFixed(2)}%',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-            ] else if (_message != null) ...[
-              Text(
-                _message!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

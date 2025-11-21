@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'payment_calculator_screen.dart';
 import 'amount_calculator_screen.dart';
 import 'rate_solver_screen.dart';
 import 'income_calculator_screen.dart';
 import 'quick_pencil_screen.dart';
+import 'widgets/main_scaffold.dart';
 
 void main() {
   runApp(const StingcalcApp());
@@ -18,8 +20,81 @@ class StingcalcApp extends StatelessWidget {
       title: 'Stingcalc',
       theme: ThemeData(
         useMaterial3: true,
-        inputDecorationTheme: const InputDecorationTheme(
-          border: OutlineInputBorder(),
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF0F172A), // Dark Slate
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF38BDF8), // Sky Blue
+          secondary: Color(0xFF818CF8), // Indigo
+          surface: Color(0xFF1E293B), // Darker Slate
+          onSurface: Color(0xFFCBD5E1), // Light Grey
+          onSurfaceVariant: Color(0xFFF8FAFC), // White (Headers)
+        ),
+        textTheme: GoogleFonts.urbanistTextTheme(
+          ThemeData.dark().textTheme,
+        ).copyWith(
+          displayLarge: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          displayMedium: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          displaySmall: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          headlineLarge: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          headlineMedium: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          headlineSmall: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          titleLarge: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          titleMedium: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          titleSmall: GoogleFonts.urbanist(
+            color: const Color(0xFFF8FAFC),
+            fontWeight: FontWeight.bold,
+          ),
+          bodyLarge: GoogleFonts.urbanist(
+            color: const Color(0xFFCBD5E1),
+          ),
+          bodyMedium: GoogleFonts.urbanist(
+            color: const Color(0xFFCBD5E1),
+          ),
+          labelLarge: GoogleFonts.jetBrainsMono(
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: const Color(0xFF1E293B),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2),
+          ),
+          labelStyle: GoogleFonts.urbanist(color: const Color(0xFFCBD5E1)),
+          hintStyle: GoogleFonts.urbanist(color: const Color(0xFF64748B)),
         ),
       ),
       home: const StingcalcHome(),
@@ -34,70 +109,50 @@ class StingcalcHome extends StatefulWidget {
   State<StingcalcHome> createState() => _StingcalcHomeState();
 }
 
-class _StingcalcHomeState extends State<StingcalcHome>
-    with SingleTickerProviderStateMixin {
-  late final TabController _tabController;
+class _StingcalcHomeState extends State<StingcalcHome> {
+  int _selectedIndex = 0;
   double? _qpAmount; // amount to finance from Quick Pencil
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 5, vsync: this);
-  }
-
-  @override
-  void dispose() {
-    _tabController.dispose();
-    super.dispose();
-  }
 
   void _handleUseInPayment(double amount) {
     setState(() {
       _qpAmount = amount;
-      _tabController.index = 0; // switch to Payment tab
+      _selectedIndex = 0; // switch to Payment tab
+    });
+  }
+
+  void _onDestinationSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Stingcalc v0.1.3'),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(48),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 600),
-              child: TabBar(
-                controller: _tabController,
-                isScrollable: false, // Tabs fill the 600px container evenly
-                tabs: const [
-                  Tab(text: 'Payment'),
-                  Tab(text: 'Amount'),
-                  Tab(text: 'Rate'),
-                  Tab(text: 'Income'),
-                  Tab(text: 'Quick Pencil'),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 600),
-          child: TabBarView(
-            controller: _tabController,
-            children: [
-              PaymentCalculatorScreen(initialLoanAmount: _qpAmount),
-              const AmountCalculatorScreen(),
-              const RateSolverScreen(),
-              const IncomeCalculatorScreen(),
-              QuickPencilScreen(onUseInPayment: _handleUseInPayment),
-            ],
-          ),
-        ),
-      ),
+    Widget page;
+    switch (_selectedIndex) {
+      case 0:
+        page = PaymentCalculatorScreen(initialLoanAmount: _qpAmount);
+        break;
+      case 1:
+        page = const AmountCalculatorScreen();
+        break;
+      case 2:
+        page = const RateSolverScreen();
+        break;
+      case 3:
+        page = const IncomeCalculatorScreen();
+        break;
+      case 4:
+        page = QuickPencilScreen(onUseInPayment: _handleUseInPayment);
+        break;
+      default:
+        page = const Center(child: Text('Unknown Page'));
+    }
+
+    return MainScaffold(
+      selectedIndex: _selectedIndex,
+      onDestinationSelected: _onDestinationSelected,
+      body: page,
     );
   }
 }
