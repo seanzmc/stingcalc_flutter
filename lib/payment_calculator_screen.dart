@@ -203,6 +203,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           },
           multiSelectionEnabled: false,
           emptySelectionAllowed: true,
+          showSelectedIcon: false,
           style: ButtonStyle(
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             side: WidgetStateProperty.all(
