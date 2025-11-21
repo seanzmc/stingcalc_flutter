@@ -66,7 +66,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       return;
     }
 
-    final docStamps = _disableDocStamps ? 0.0 : LoanMath.docStamps(netLoanAmount);
+    final docStamps =
+        _disableDocStamps ? 0.0 : LoanMath.docStamps(netLoanAmount);
     final principalWithTax = netLoanAmount + docStamps;
 
     final monthly = LoanMath.monthlyPayment(
@@ -102,22 +103,23 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
 
     return Padding(
       padding: const EdgeInsets.all(24.0),
-      child: isDesktop
-          ? Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(flex: 4, child: _buildInputs(context)),
-                const SizedBox(width: 32),
-                Expanded(flex: 5, child: _buildVisualization(context)),
-              ],
-            )
-          : ListView(
-              children: [
-                _buildInputs(context),
-                const SizedBox(height: 32),
-                _buildVisualization(context),
-              ],
-            ),
+      child:
+          isDesktop
+              ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 4, child: _buildInputs(context)),
+                  const SizedBox(width: 32),
+                  Expanded(flex: 5, child: _buildVisualization(context)),
+                ],
+              )
+              : ListView(
+                children: [
+                  _buildInputs(context),
+                  const SizedBox(height: 32),
+                  _buildVisualization(context),
+                ],
+              ),
     );
   }
 
@@ -172,10 +174,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           },
         ),
         const SizedBox(height: 24),
-        Text(
-          'TERM (MONTHS)',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
+        Text('TERM (MONTHS)', style: Theme.of(context).textTheme.bodyMedium),
         const SizedBox(height: 8),
         SegmentedButton<int>(
           segments: const [
@@ -192,8 +191,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             });
             _calculate();
           },
+          multiSelectionEnabled: false,
+          emptySelectionAllowed: false,
           style: ButtonStyle(
-            visualDensity: VisualDensity.compact,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             side: WidgetStateProperty.all(
               BorderSide(color: Theme.of(context).colorScheme.surface),
@@ -253,7 +253,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               PieChartSectionData(
                 color: colorScheme.primary,
                 value: _totalPrincipal,
-                title: '${((_totalPrincipal / _totalCost) * 100).toStringAsFixed(0)}%',
+                title:
+                    '${((_totalPrincipal / _totalCost) * 100).toStringAsFixed(0)}%',
                 radius: 25,
                 titleStyle: GoogleFonts.jetBrainsMono(
                   fontSize: 12,
@@ -264,7 +265,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               PieChartSectionData(
                 color: colorScheme.secondary,
                 value: _totalInterest,
-                title: '${((_totalInterest / _totalCost) * 100).toStringAsFixed(0)}%',
+                title:
+                    '${((_totalInterest / _totalCost) * 100).toStringAsFixed(0)}%',
                 radius: 25,
                 titleStyle: GoogleFonts.jetBrainsMono(
                   fontSize: 12,
@@ -309,24 +311,16 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
         Container(
           width: 12,
           height: 12,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 8),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
             Text(
               value,
-              style: GoogleFonts.jetBrainsMono(
-                fontWeight: FontWeight.bold,
-              ),
+              style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold),
             ),
           ],
         ),
