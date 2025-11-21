@@ -23,7 +23,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   final _tradeInController = TextEditingController();
 
   double _rate = 6.9;
-  int _term = 72;
+  int? _term;
   bool _disableDocStamps = false;
 
   // Results
@@ -66,17 +66,27 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       return;
     }
 
+    if (_term == null) {
+      setState(() {
+        _monthlyPayment = 0;
+        _totalInterest = 0;
+        _totalPrincipal = 0;
+        _totalCost = 0;
+      });
+      return;
+    }
+
     final docStamps =
         _disableDocStamps ? 0.0 : LoanMath.docStamps(netLoanAmount);
     final principalWithTax = netLoanAmount + docStamps;
 
     final monthly = LoanMath.monthlyPayment(
       principal: principalWithTax,
-      termMonths: _term,
+      termMonths: _term!,
       annualRatePercent: _rate,
     );
 
-    final totalInterest = monthly * _term - principalWithTax;
+    final totalInterest = monthly * _term! - principalWithTax;
     final totalCost = principalWithTax + totalInterest;
 
     setState(() {
@@ -184,15 +194,15 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             ButtonSegment(value: 72, label: Text('72')),
             ButtonSegment(value: 84, label: Text('84')),
           ],
-          selected: {_term},
+          selected: _term != null ? {_term!} : <int>{},
           onSelectionChanged: (Set<int> newSelection) {
             setState(() {
-              _term = newSelection.first;
+              _term = newSelection.isEmpty ? null : newSelection.first;
             });
             _calculate();
           },
           multiSelectionEnabled: false,
-          emptySelectionAllowed: false,
+          emptySelectionAllowed: true,
           style: ButtonStyle(
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             side: WidgetStateProperty.all(

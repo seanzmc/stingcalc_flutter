@@ -20,11 +20,7 @@ void main() {
 
     // Check for "72" text
     final text72Finder = find.text('72');
-    expect(
-      text72Finder,
-      findsOneWidget,
-      reason: 'Should find exactly one "72" text initially',
-    );
+    expect(text72Finder, findsOneWidget);
 
     // Check for other segments
     expect(find.text('36'), findsOneWidget);
@@ -32,13 +28,17 @@ void main() {
     expect(find.text('60'), findsOneWidget);
     expect(find.text('84'), findsOneWidget);
 
-    // Verify selection
+    // Verify NO selection initially
     final segmentedButtonFinder = find.byType(SegmentedButton<int>);
     expect(segmentedButtonFinder, findsOneWidget);
 
     final SegmentedButton<int> segmentedButton = tester.widget(
       segmentedButtonFinder,
     );
-    expect(segmentedButton.selected, {72});
+    expect(
+      segmentedButton.selected,
+      isEmpty,
+      reason: 'Should have no selection initially',
+    );
   });
 }
