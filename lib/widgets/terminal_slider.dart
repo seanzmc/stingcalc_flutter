@@ -7,6 +7,7 @@ class TerminalSlider extends StatelessWidget {
   final ValueChanged<double> onChanged;
   final String? label;
   final int? divisions;
+  final FocusNode? focusNode;
 
   const TerminalSlider({
     super.key,
@@ -16,6 +17,7 @@ class TerminalSlider extends StatelessWidget {
     required this.onChanged,
     this.label,
     this.divisions,
+    this.focusNode,
   });
 
   @override
@@ -49,6 +51,7 @@ class TerminalSlider extends StatelessWidget {
             max: max,
             divisions: divisions,
             onChanged: onChanged,
+            focusNode: focusNode,
           ),
         ),
       ],

@@ -24,6 +24,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
 
   final _loanAmountFocusNode = FocusNode();
   final _rateFocusNode = FocusNode();
+  final _termFocusNode = FocusNode();
 
   double _rate = 6.9;
   int _term = 60;
@@ -51,6 +52,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     _rateController.dispose();
     _loanAmountFocusNode.dispose();
     _rateFocusNode.dispose();
+    _termFocusNode.dispose();
     super.dispose();
   }
 
@@ -129,100 +131,85 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   }
 
   Widget _buildInputs(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'LOAN DETAILS',
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 12,
-            fontWeight: FontWeight.bold,
-            color: Theme.of(context).colorScheme.secondary,
-            letterSpacing: 1.2,
+    return FocusTraversalGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'LOAN DETAILS',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.secondary,
+              letterSpacing: 1.2,
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
-        _buildTextField(
-          controller: _loanAmountController,
-          label: 'Vehicle Price',
-          icon: Icons.directions_car,
-          focusNode: _loanAmountFocusNode,
-          autofocus: true,
-          textInputAction: TextInputAction.next,
-          onSubmitted: (_) => _rateFocusNode.requestFocus(),
-        ),
-        const SizedBox(height: 16),
-        const SizedBox(height: 16),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              flex: 1,
-              child: TextField(
-                controller: _rateController,
-                focusNode: _rateFocusNode,
-                textInputAction: TextInputAction.done,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                decoration: const InputDecoration(
-                  labelText: 'Rate (%)',
-                  prefixIcon: Icon(Icons.percent, size: 20),
-                ),
-                onChanged: (value) {
-                  final newRate = double.tryParse(value);
-                  if (newRate != null && newRate >= 0 && newRate <= 25) {
-                    setState(() {
-                      _rate = newRate;
-                    });
-                    _calculate();
-                  }
-                },
-              ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _loanAmountController,
+            label: 'Vehicle Price',
+            icon: Icons.directions_car,
+            focusNode: _loanAmountFocusNode,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _rateFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _rateController,
+            focusNode: _rateFocusNode,
+            textInputAction: TextInputAction.next,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              flex: 2,
-              child: TerminalSlider(
-                value: _rate,
-                min: 0.0,
-                max: 25.0,
-                onChanged: (value) {
-                  setState(() {
-                    _rate = value;
-                    _rateController.text = _rate.toStringAsFixed(1);
-                  });
-                  _calculate();
-                },
-              ),
+            decoration: const InputDecoration(
+              labelText: 'Rate (%)',
+              prefixIcon: Icon(Icons.percent, size: 20),
             ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        TerminalSlider(
-          label: 'TERM: $_term MONTHS',
-          value: _term.toDouble(),
-          min: 36,
-          max: 84,
-          divisions: 4,
-          onChanged: (value) {
-            setState(() {
-              _term = value.round();
-            });
-            _calculate();
-          },
-        ),
-        const SizedBox(height: 16),
-        SwitchListTile(
-          title: const Text('Disable Documentary Stamps'),
-          value: _disableDocStamps,
-          onChanged: (value) {
-            setState(() => _disableDocStamps = value);
-            _calculate();
-          },
-          contentPadding: EdgeInsets.zero,
-        ),
-      ],
+            onChanged: (value) {
+              final newRate = double.tryParse(value);
+              if (newRate != null && newRate >= 0 && newRate <= 25) {
+                setState(() {
+                  _rate = newRate;
+                });
+                _calculate();
+              }
+            },
+            onSubmitted: (_) => _termFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 24),
+          const SizedBox(height: 24),
+          TerminalSlider(
+            label: 'TERM: $_term MONTHS',
+            value: _term.toDouble(),
+            min: 36,
+            max: 84,
+            divisions: 4,
+            focusNode: _termFocusNode,
+            onChanged: (value) {
+              setState(() {
+                _term = value.round();
+              });
+              _calculate();
+            },
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Disable Documentary Stamps'),
+            value: _disableDocStamps,
+            onChanged: (value) {
+              setState(() => _disableDocStamps = value);
+              _calculate();
+            },
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
     );
   }
 
@@ -243,6 +230,11 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       onSubmitted: onSubmitted,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [CurrencyInputFormatter()],
+      style: GoogleFonts.jetBrainsMono(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.primary,
+      ),
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20),
