@@ -6,10 +6,7 @@ import 'widgets/data_readout.dart';
 class QuickPencilScreen extends StatefulWidget {
   final void Function(double amountToFinance)? onUseInPayment;
 
-  const QuickPencilScreen({
-    super.key,
-    this.onUseInPayment,
-  });
+  const QuickPencilScreen({super.key, this.onUseInPayment});
 
   @override
   State<QuickPencilScreen> createState() => _QuickPencilScreenState();
@@ -32,6 +29,9 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
   final _tradeAllowanceController = TextEditingController();
   final _tradePayoffController = TextEditingController();
   final _downPaymentController = TextEditingController();
+
+  final _msrpFocusNode = FocusNode();
+  final _sellingPriceFocusNode = FocusNode();
 
   // Tag & tax
   SaleType _saleType = SaleType.newVehicle;
@@ -67,6 +67,8 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     _customTagFeeController.dispose();
     _stateController.dispose();
     _customTaxRateController.dispose();
+    _msrpFocusNode.dispose();
+    _sellingPriceFocusNode.dispose();
     super.dispose();
   }
 
@@ -108,9 +110,10 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     final tradePayoff = parseOrZero(_tradePayoffController);
     final downPayment = parseOrZero(_downPaymentController);
 
-    final customTagFee = _tagType == TagType.custom
-        ? double.tryParse(_customTagFeeController.text.trim())
-        : null;
+    final customTagFee =
+        _tagType == TagType.custom
+            ? double.tryParse(_customTagFeeController.text.trim())
+            : null;
 
     final customTaxRate =
         double.tryParse(_customTaxRateController.text.trim()) ?? 0.0;
@@ -220,27 +223,54 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               const SizedBox(height: 24),
               _buildSectionHeader('VEHICLE & PRICING'),
               if (isNew) ...[
-                _buildRow('M.S.R.P.', _msrpController),
+                _buildRow(
+                  'M.S.R.P.',
+                  _msrpController,
+                  focusNode: _msrpFocusNode,
+                  autofocus: true,
+                ),
                 _buildRow('Discount', _discountController, isNegative: true),
                 _buildRow('Rebates', _rebatesController, isNegative: true),
               ] else ...[
-                _buildRow('Selling Price', _sellingPriceController),
+                _buildRow(
+                  'Selling Price',
+                  _sellingPriceController,
+                  focusNode: _sellingPriceFocusNode,
+                  autofocus: true,
+                ),
               ],
               _buildRow('Additional Equipment', _additionalEqController),
               const SizedBox(height: 24),
               _buildSectionHeader('TRADE & DOWN'),
-              _buildRow('Trade Allowance', _tradeAllowanceController, isNegative: true),
+              _buildRow(
+                'Trade Allowance',
+                _tradeAllowanceController,
+                isNegative: true,
+              ),
               _buildRow('Trade Payoff', _tradePayoffController),
-              _buildRow('Down Payment', _downPaymentController, isNegative: true),
+              _buildRow(
+                'Down Payment',
+                _downPaymentController,
+                isNegative: true,
+              ),
               const SizedBox(height: 24),
               _buildSectionHeader('TAX & TAG'),
               DropdownButtonFormField<TagType>(
                 key: ValueKey(_tagType),
                 initialValue: _tagType,
                 items: const [
-                  DropdownMenuItem(value: TagType.newTag, child: Text('New Tag')),
-                  DropdownMenuItem(value: TagType.transfer, child: Text('Transfer Tag')),
-                  DropdownMenuItem(value: TagType.custom, child: Text('Custom Tag Fee')),
+                  DropdownMenuItem(
+                    value: TagType.newTag,
+                    child: Text('New Tag'),
+                  ),
+                  DropdownMenuItem(
+                    value: TagType.transfer,
+                    child: Text('Transfer Tag'),
+                  ),
+                  DropdownMenuItem(
+                    value: TagType.custom,
+                    child: Text('Custom Tag Fee'),
+                  ),
                 ],
                 onChanged: (v) {
                   if (v != null) {
@@ -299,8 +329,14 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
     );
   }
 
-  Widget _buildRow(String label, TextEditingController controller,
-      {bool isNegative = false}) {
+  Widget _buildRow(
+    String label,
+    TextEditingController controller, {
+    bool isNegative = false,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    TextInputAction textInputAction = TextInputAction.next,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
@@ -319,7 +355,13 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             flex: 3,
             child: TextField(
               controller: controller,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              focusNode: focusNode,
+              autofocus: autofocus,
+              textInputAction: textInputAction,
+              onSubmitted: (_) => FocusScope.of(context).nextFocus(),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: InputDecoration(
                 prefixText: isNegative ? '- \$ ' : '\$ ',
                 isDense: true,
@@ -360,12 +402,13 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Total Delivered Price', style: theme.textTheme.bodyMedium),
+                Text(
+                  'Total Delivered Price',
+                  style: theme.textTheme.bodyMedium,
+                ),
                 Text(
                   _formatMoney(totalDelivered),
-                  style: GoogleFonts.jetBrainsMono(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold),
                 ),
               ],
             ),

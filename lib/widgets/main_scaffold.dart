@@ -55,9 +55,7 @@ class _MainScaffoldState extends State<MainScaffold> {
         title: const Text('StingCalc'),
         backgroundColor: Theme.of(context).colorScheme.surface,
       ),
-      drawer: Drawer(
-        child: _buildSidebar(context, isDrawer: true),
-      ),
+      drawer: Drawer(child: _buildSidebar(context, isDrawer: true)),
       body: PageTransitionSwitcher(
         transitionBuilder: (
           Widget child,
@@ -90,8 +88,11 @@ class _MainScaffoldState extends State<MainScaffold> {
               padding: const EdgeInsets.all(24.0),
               child: Row(
                 children: [
-                  Icon(FontAwesomeIcons.calculator,
-                      color: colorScheme.primary, size: 28),
+                  Icon(
+                    FontAwesomeIcons.calculator,
+                    color: colorScheme.primary,
+                    size: 28,
+                  ),
                   const SizedBox(width: 12),
                   Text(
                     'StingCalc',
@@ -115,16 +116,19 @@ class _MainScaffoldState extends State<MainScaffold> {
                   icon: FontAwesomeIcons.moneyBillWave,
                   label: 'Payment',
                   index: 0,
+                  isDrawer: isDrawer,
                 ),
                 _buildNavItem(
                   icon: FontAwesomeIcons.coins,
                   label: 'Amount',
                   index: 1,
+                  isDrawer: isDrawer,
                 ),
                 _buildNavItem(
                   icon: FontAwesomeIcons.percent,
                   label: 'Rate',
                   index: 2,
+                  isDrawer: isDrawer,
                 ),
                 const SizedBox(height: 24),
                 _buildSectionHeader('DEAL MODULES'),
@@ -132,11 +136,13 @@ class _MainScaffoldState extends State<MainScaffold> {
                   icon: FontAwesomeIcons.wallet,
                   label: 'Income Calc',
                   index: 3,
+                  isDrawer: isDrawer,
                 ),
                 _buildNavItem(
                   icon: FontAwesomeIcons.pencil,
                   label: 'Quick Pencil',
                   index: 4,
+                  isDrawer: isDrawer,
                 ),
               ],
             ),
@@ -165,6 +171,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     required IconData icon,
     required String label,
     required int index,
+    required bool isDrawer,
   }) {
     final isSelected = widget.selectedIndex == index;
     final theme = Theme.of(context);
@@ -179,17 +186,17 @@ class _MainScaffoldState extends State<MainScaffold> {
         child: InkWell(
           onTap: () {
             widget.onDestinationSelected(index);
-            if (Scaffold.of(context).hasDrawer &&
-                Scaffold.of(context).isDrawerOpen) {
+            if (isDrawer) {
               Navigator.of(context).pop(); // Close drawer on mobile
             }
           },
           hoverColor: colorScheme.primary.withValues(alpha: 0.1),
           child: Container(
             decoration: BoxDecoration(
-              color: isSelected
-                  ? colorScheme.primary.withValues(alpha: 0.15)
-                  : Colors.transparent,
+              color:
+                  isSelected
+                      ? colorScheme.primary.withValues(alpha: 0.15)
+                      : Colors.transparent,
               border: Border(
                 left: BorderSide(
                   color: isSelected ? colorScheme.primary : Colors.transparent,
@@ -203,17 +210,19 @@ class _MainScaffoldState extends State<MainScaffold> {
                 Icon(
                   icon,
                   size: 20,
-                  color: isSelected
-                      ? colorScheme.primary
-                      : colorScheme.onSurface.withValues(alpha: 0.7),
+                  color:
+                      isSelected
+                          ? colorScheme.primary
+                          : colorScheme.onSurface.withValues(alpha: 0.7),
                 ),
                 const SizedBox(width: 12),
                 Text(
                   label,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: isSelected
-                        ? colorScheme.onSurfaceVariant
-                        : colorScheme.onSurface,
+                    color:
+                        isSelected
+                            ? colorScheme.onSurfaceVariant
+                            : colorScheme.onSurface,
                     fontWeight:
                         isSelected ? FontWeight.bold : FontWeight.normal,
                   ),

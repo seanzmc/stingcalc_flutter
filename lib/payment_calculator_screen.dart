@@ -21,6 +21,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   final _loanAmountController = TextEditingController();
   final _rateController = TextEditingController();
 
+  final _loanAmountFocusNode = FocusNode();
+  final _rateFocusNode = FocusNode();
+
   double _rate = 6.9;
   int _term = 60;
   bool _disableDocStamps = false;
@@ -45,6 +48,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   void dispose() {
     _loanAmountController.dispose();
     _rateController.dispose();
+    _loanAmountFocusNode.dispose();
+    _rateFocusNode.dispose();
     super.dispose();
   }
 
@@ -138,6 +143,10 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           controller: _loanAmountController,
           label: 'Vehicle Price',
           icon: Icons.directions_car,
+          focusNode: _loanAmountFocusNode,
+          autofocus: true,
+          textInputAction: TextInputAction.next,
+          onSubmitted: (_) => _rateFocusNode.requestFocus(),
         ),
         const SizedBox(height: 16),
         const SizedBox(height: 16),
@@ -148,6 +157,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               flex: 1,
               child: TextField(
                 controller: _rateController,
+                focusNode: _rateFocusNode,
+                textInputAction: TextInputAction.done,
                 keyboardType: const TextInputType.numberWithOptions(
                   decimal: true,
                 ),
@@ -216,9 +227,17 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     required TextEditingController controller,
     required String label,
     required IconData icon,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    TextInputAction? textInputAction,
+    ValueChanged<String>? onSubmitted,
   }) {
     return TextField(
       controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
         labelText: label,

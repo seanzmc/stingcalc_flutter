@@ -17,6 +17,10 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   final _paymentController = TextEditingController();
   final _termController = TextEditingController(text: '72');
 
+  final _principalFocusNode = FocusNode();
+  final _paymentFocusNode = FocusNode();
+  final _termFocusNode = FocusNode();
+
   double? _ratePercent;
   String? _message;
 
@@ -25,6 +29,9 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     _principalController.dispose();
     _paymentController.dispose();
     _termController.dispose();
+    _principalFocusNode.dispose();
+    _paymentFocusNode.dispose();
+    _termFocusNode.dispose();
     super.dispose();
   }
 
@@ -55,8 +62,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     if (payment < minPayment) {
       setState(() {
         _ratePercent = null;
-        _message =
-            'Payment too low. Min: \$${minPayment.toStringAsFixed(2)}';
+        _message = 'Payment too low. Min: \$${minPayment.toStringAsFixed(2)}';
       });
       return;
     }
@@ -112,28 +118,43 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
                       children: [
                         TextFormField(
                           controller: _principalController,
+                          focusNode: _principalFocusNode,
+                          autofocus: true,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted:
+                              (_) => _paymentFocusNode.requestFocus(),
                           decoration: const InputDecoration(
                             labelText: 'Loan Amount',
                             prefixText: '\$ ',
                             prefixIcon: Icon(Icons.account_balance),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           onChanged: (_) => _calculate(),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _paymentController,
+                          focusNode: _paymentFocusNode,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted:
+                              (_) => _termFocusNode.requestFocus(),
                           decoration: const InputDecoration(
                             labelText: 'Target Payment',
                             prefixText: '\$ ',
                             prefixIcon: Icon(Icons.payments),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           onChanged: (_) => _calculate(),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _termController,
+                          focusNode: _termFocusNode,
+                          textInputAction: TextInputAction.done,
                           decoration: const InputDecoration(
                             labelText: 'Term (Months)',
                             prefixIcon: Icon(Icons.calendar_today),
@@ -165,8 +186,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.error_outline,
-                          color: theme.colorScheme.error),
+                      Icon(Icons.error_outline, color: theme.colorScheme.error),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
@@ -180,9 +200,10 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
               else
                 DataReadout(
                   label: 'REQUIRED APR',
-                  value: _ratePercent != null
-                      ? '${_ratePercent!.toStringAsFixed(2)}%'
-                      : '---',
+                  value:
+                      _ratePercent != null
+                          ? '${_ratePercent!.toStringAsFixed(2)}%'
+                          : '---',
                   isLarge: true,
                   valueColor: theme.colorScheme.primary,
                   icon: Icons.percent,

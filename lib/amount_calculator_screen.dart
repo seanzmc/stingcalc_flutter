@@ -17,6 +17,10 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   final _rateController = TextEditingController(text: '6.9');
   final _termController = TextEditingController(text: '72');
 
+  final _paymentFocusNode = FocusNode();
+  final _rateFocusNode = FocusNode();
+  final _termFocusNode = FocusNode();
+
   bool _disableDocStamps = false;
 
   double? _loanAmount;
@@ -28,6 +32,9 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     _paymentController.dispose();
     _rateController.dispose();
     _termController.dispose();
+    _paymentFocusNode.dispose();
+    _rateFocusNode.dispose();
+    _termFocusNode.dispose();
     super.dispose();
   }
 
@@ -121,28 +128,43 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
                       children: [
                         TextFormField(
                           controller: _paymentController,
+                          focusNode: _paymentFocusNode,
+                          autofocus: true,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted:
+                              (_) => _rateFocusNode.requestFocus(),
                           decoration: const InputDecoration(
                             labelText: 'Desired Payment',
                             prefixText: '\$ ',
                             prefixIcon: Icon(Icons.payments),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           onChanged: (_) => _calculate(),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _rateController,
+                          focusNode: _rateFocusNode,
+                          textInputAction: TextInputAction.next,
+                          onFieldSubmitted:
+                              (_) => _termFocusNode.requestFocus(),
                           decoration: const InputDecoration(
                             labelText: 'APR',
                             suffixText: '%',
                             prefixIcon: Icon(Icons.percent),
                           ),
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
                           onChanged: (_) => _calculate(),
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _termController,
+                          focusNode: _termFocusNode,
+                          textInputAction: TextInputAction.done,
                           decoration: const InputDecoration(
                             labelText: 'Term (Months)',
                             prefixIcon: Icon(Icons.calendar_today),

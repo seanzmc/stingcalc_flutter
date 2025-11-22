@@ -18,6 +18,10 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   final _checkDateController = TextEditingController();
   final _hireDateController = TextEditingController();
 
+  final _ytdFocusNode = FocusNode();
+  final _checkDateFocusNode = FocusNode();
+  final _hireDateFocusNode = FocusNode();
+
   DateTime? _checkDate;
   DateTime? _hireDate;
 
@@ -30,6 +34,9 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
     _ytdController.dispose();
     _checkDateController.dispose();
     _hireDateController.dispose();
+    _ytdFocusNode.dispose();
+    _checkDateFocusNode.dispose();
+    _hireDateFocusNode.dispose();
     super.dispose();
   }
 
@@ -48,9 +55,10 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
 
   Future<void> _pickDate({required bool isCheckDate}) async {
     final now = DateTime.now();
-    final initial = isCheckDate
-        ? (_checkDate ?? now)
-        : (_hireDate ?? DateTime(now.year, 1, 1));
+    final initial =
+        isCheckDate
+            ? (_checkDate ?? now)
+            : (_hireDate ?? DateTime(now.year, 1, 1));
 
     final picked = await showDatePicker(
       context: context,
@@ -232,19 +240,27 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
           children: [
             TextFormField(
               controller: _ytdController,
+              focusNode: _ytdFocusNode,
+              autofocus: true,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => _checkDateFocusNode.requestFocus(),
               decoration: const InputDecoration(
                 labelText: 'Year-to-Date Gross',
                 prefixText: '\$ ',
                 prefixIcon: Icon(Icons.attach_money),
               ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               onChanged: (_) => _calculate(),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Required' : null,
+              validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _checkDateController,
+              focusNode: _checkDateFocusNode,
+              textInputAction: TextInputAction.next,
+              onFieldSubmitted: (_) => _hireDateFocusNode.requestFocus(),
               decoration: InputDecoration(
                 labelText: 'Check Date',
                 hintText: 'MM/DD/YYYY',
@@ -264,6 +280,8 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _hireDateController,
+              focusNode: _hireDateFocusNode,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(
                 labelText: 'Hire Date (Optional)',
                 hintText: 'MM/DD/YYYY',
@@ -305,8 +323,10 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.error_outline,
-                color: Theme.of(context).colorScheme.error),
+            Icon(
+              Icons.error_outline,
+              color: Theme.of(context).colorScheme.error,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
@@ -323,18 +343,16 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
       children: [
         DataReadout(
           label: 'Monthly Gross',
-          value: _monthlyIncome != null
-              ? _formatCurrency(_monthlyIncome!)
-              : '---',
+          value:
+              _monthlyIncome != null ? _formatCurrency(_monthlyIncome!) : '---',
           isLarge: true,
           icon: Icons.calendar_view_month,
         ),
         const SizedBox(height: 16),
         DataReadout(
           label: 'Annual Salary',
-          value: _annualIncome != null
-              ? _formatCurrency(_annualIncome!)
-              : '---',
+          value:
+              _annualIncome != null ? _formatCurrency(_annualIncome!) : '---',
           valueColor: Theme.of(context).colorScheme.secondary,
           icon: Icons.calendar_today,
         ),
