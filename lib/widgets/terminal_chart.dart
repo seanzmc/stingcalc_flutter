@@ -40,7 +40,7 @@ class TerminalChart extends StatelessWidget {
               Text(
                 centerText,
                 style: GoogleFonts.jetBrainsMono(
-                  fontSize: 20,
+                  fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: theme.colorScheme.onSurface,
                 ),

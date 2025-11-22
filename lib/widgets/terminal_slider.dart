@@ -6,6 +6,7 @@ class TerminalSlider extends StatelessWidget {
   final double max;
   final ValueChanged<double> onChanged;
   final String? label;
+  final Widget? labelWidget;
   final int? divisions;
   final FocusNode? focusNode;
 
@@ -16,6 +17,7 @@ class TerminalSlider extends StatelessWidget {
     required this.max,
     required this.onChanged,
     this.label,
+    this.labelWidget,
     this.divisions,
     this.focusNode,
   });
@@ -28,7 +30,10 @@ class TerminalSlider extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (label != null) ...[
+        if (labelWidget != null) ...[
+          labelWidget!,
+          const SizedBox(height: 4),
+        ] else if (label != null) ...[
           Text(label!, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 4),
         ],

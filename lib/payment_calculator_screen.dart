@@ -185,7 +185,22 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           const SizedBox(height: 24),
           const SizedBox(height: 24),
           TerminalSlider(
-            label: 'TERM: $_term MONTHS',
+            labelWidget: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium,
+                children: [
+                  const TextSpan(text: 'TERM: '),
+                  TextSpan(
+                    text: '$_term',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const TextSpan(text: ' MONTHS'),
+                ],
+              ),
+            ),
             value: _term.toDouble(),
             min: 36,
             max: 84,
