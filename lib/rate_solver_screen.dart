@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
 
 class RateSolverScreen extends StatefulWidget {
@@ -46,11 +47,11 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   }
 
   void _calculate() {
-    final principal = double.tryParse(_principalController.text);
-    final payment = double.tryParse(_paymentController.text);
+    final principal = CurrencyInputFormatter.parse(_principalController.text);
+    final payment = CurrencyInputFormatter.parse(_paymentController.text);
     final term = int.tryParse(_termController.text);
 
-    if (principal == null || payment == null || term == null || term <= 0) {
+    if (principal <= 0 || payment <= 0 || term == null || term <= 0) {
       setState(() {
         _ratePercent = null;
         _message = null;
@@ -62,7 +63,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     if (payment < minPayment) {
       setState(() {
         _ratePercent = null;
-        _message = 'Payment too low. Min: \$${minPayment.toStringAsFixed(2)}';
+        _message =
+            'Payment too low. Min: \$${CurrencyInputFormatter.formatResult(minPayment)}';
       });
       return;
     }
@@ -131,6 +133,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
+                          inputFormatters: [CurrencyInputFormatter()],
                           onChanged: (_) => _calculate(),
                         ),
                         const SizedBox(height: 16),
@@ -148,6 +151,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
                           keyboardType: const TextInputType.numberWithOptions(
                             decimal: true,
                           ),
+                          inputFormatters: [CurrencyInputFormatter()],
                           onChanged: (_) => _calculate(),
                         ),
                         const SizedBox(height: 16),

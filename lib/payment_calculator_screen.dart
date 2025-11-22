@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
 import 'widgets/terminal_chart.dart';
 import 'widgets/terminal_slider.dart';
@@ -54,7 +55,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   }
 
   void _calculate() {
-    final loanAmount = double.tryParse(_loanAmountController.text) ?? 0.0;
+    final loanAmount = CurrencyInputFormatter.parse(_loanAmountController.text);
 
     final netLoanAmount = loanAmount;
 
@@ -90,13 +91,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   }
 
   String _formatCurrency(double value) {
-    final numberStr = value.toStringAsFixed(2);
-    final parts = numberStr.split('.');
-    final integerPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '\$$integerPart.${parts[1]}';
+    return '\$${CurrencyInputFormatter.formatResult(value)}';
   }
 
   @override
@@ -110,9 +105,17 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               ? Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Expanded(flex: 4, child: _buildInputs(context)),
+                  Expanded(
+                    flex: 4,
+                    child: SingleChildScrollView(child: _buildInputs(context)),
+                  ),
                   const SizedBox(width: 32),
-                  Expanded(flex: 5, child: _buildVisualization(context)),
+                  Expanded(
+                    flex: 5,
+                    child: SingleChildScrollView(
+                      child: _buildVisualization(context),
+                    ),
+                  ),
                 ],
               )
               : ListView(
@@ -239,6 +242,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       textInputAction: textInputAction,
       onSubmitted: onSubmitted,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [CurrencyInputFormatter()],
       decoration: InputDecoration(
         labelText: label,
         prefixIcon: Icon(icon, size: 20),

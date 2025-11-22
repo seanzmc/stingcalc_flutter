@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
 
 class IncomeCalculatorScreen extends StatefulWidget {
@@ -136,8 +137,8 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
       return;
     }
 
-    final ytd = double.tryParse(_ytdController.text);
-    if (ytd == null) return;
+    final ytd = CurrencyInputFormatter.parse(_ytdController.text);
+    if (ytd <= 0) return;
 
     final monthly = IncomeCalculator.monthlyIncome(
       ytdAmount: ytd,
@@ -168,13 +169,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
   }
 
   String _formatCurrency(double value) {
-    final numberStr = value.toStringAsFixed(2);
-    final parts = numberStr.split('.');
-    final integerPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '\$$integerPart.${parts[1]}';
+    return '\$${CurrencyInputFormatter.formatResult(value)}';
   }
 
   @override
@@ -252,6 +247,7 @@ class _IncomeCalculatorScreenState extends State<IncomeCalculatorScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [CurrencyInputFormatter()],
               onChanged: (_) => _calculate(),
               validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
             ),

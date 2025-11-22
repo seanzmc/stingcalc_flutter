@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
 
 class AmountCalculatorScreen extends StatefulWidget {
@@ -51,11 +52,11 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   }
 
   void _calculate() {
-    final payment = double.tryParse(_paymentController.text);
+    final payment = CurrencyInputFormatter.parse(_paymentController.text);
     final rate = double.tryParse(_rateController.text);
     final term = int.tryParse(_termController.text);
 
-    if (payment == null || rate == null || term == null || term <= 0) {
+    if (payment <= 0 || rate == null || term == null || term <= 0) {
       setState(() {
         _loanAmount = null;
         _docStamps = null;
@@ -81,13 +82,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   }
 
   String _formatCurrency(double value) {
-    final numberStr = value.toStringAsFixed(2);
-    final parts = numberStr.split('.');
-    final integerPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '\$$integerPart.${parts[1]}';
+    return CurrencyInputFormatter.formatResult(value);
   }
 
   @override

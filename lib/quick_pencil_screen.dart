@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'engine/quick_pencil_engine.dart';
+import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
 
 class QuickPencilScreen extends StatefulWidget {
@@ -98,7 +99,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
   void _calculate() {
     double parseOrZero(TextEditingController c) =>
-        double.tryParse(c.text.trim()) ?? 0.0;
+        CurrencyInputFormatter.parse(c.text.trim());
 
     final clientName = _clientNameController.text.trim();
     final msrp = parseOrZero(_msrpController);
@@ -112,7 +113,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
 
     final customTagFee =
         _tagType == TagType.custom
-            ? double.tryParse(_customTagFeeController.text.trim())
+            ? CurrencyInputFormatter.parse(_customTagFeeController.text.trim())
             : null;
 
     final customTaxRate =
@@ -149,13 +150,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
   }
 
   String _formatMoney(double value) {
-    final numberStr = value.toStringAsFixed(2);
-    final parts = numberStr.split('.');
-    final integerPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '\$$integerPart.${parts[1]}';
+    return '\$${CurrencyInputFormatter.formatResult(value)}';
   }
 
   @override
@@ -362,6 +357,7 @@ class _QuickPencilScreenState extends State<QuickPencilScreen> {
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
+              inputFormatters: [CurrencyInputFormatter()],
               decoration: InputDecoration(
                 prefixText: isNegative ? '- \$ ' : '\$ ',
                 isDense: true,
