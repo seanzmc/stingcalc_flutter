@@ -19,11 +19,10 @@ class PaymentCalculatorScreen extends StatefulWidget {
 class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   // Inputs
   final _loanAmountController = TextEditingController();
-  final _downPaymentController = TextEditingController();
-  final _tradeInController = TextEditingController();
+  final _rateController = TextEditingController();
 
   double _rate = 6.9;
-  int? _term;
+  int _term = 60;
   bool _disableDocStamps = false;
 
   // Results
@@ -38,35 +37,23 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     if (widget.initialLoanAmount != null) {
       _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
     }
+    _rateController.text = _rate.toStringAsFixed(1);
     _calculate();
   }
 
   @override
   void dispose() {
     _loanAmountController.dispose();
-    _downPaymentController.dispose();
-    _tradeInController.dispose();
+    _rateController.dispose();
     super.dispose();
   }
 
   void _calculate() {
     final loanAmount = double.tryParse(_loanAmountController.text) ?? 0.0;
-    final downPayment = double.tryParse(_downPaymentController.text) ?? 0.0;
-    final tradeIn = double.tryParse(_tradeInController.text) ?? 0.0;
 
-    final netLoanAmount = loanAmount - downPayment - tradeIn;
+    final netLoanAmount = loanAmount;
 
     if (netLoanAmount <= 0) {
-      setState(() {
-        _monthlyPayment = 0;
-        _totalInterest = 0;
-        _totalPrincipal = 0;
-        _totalCost = 0;
-      });
-      return;
-    }
-
-    if (_term == null) {
       setState(() {
         _monthlyPayment = 0;
         _totalInterest = 0;
@@ -82,11 +69,11 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
 
     final monthly = LoanMath.monthlyPayment(
       principal: principalWithTax,
-      termMonths: _term!,
+      termMonths: _term,
       annualRatePercent: _rate,
     );
 
-    final totalInterest = monthly * _term! - principalWithTax;
+    final totalInterest = monthly * _term - principalWithTax;
     final totalCost = principalWithTax + totalInterest;
 
     setState(() {
@@ -153,63 +140,63 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           icon: Icons.directions_car,
         ),
         const SizedBox(height: 16),
+        const SizedBox(height: 16),
         Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Expanded(
-              child: _buildTextField(
-                controller: _downPaymentController,
-                label: 'Down Payment',
-                icon: Icons.arrow_downward,
+              flex: 1,
+              child: TextField(
+                controller: _rateController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Rate (%)',
+                  prefixIcon: Icon(Icons.percent, size: 20),
+                ),
+                onChanged: (value) {
+                  final newRate = double.tryParse(value);
+                  if (newRate != null && newRate >= 0 && newRate <= 25) {
+                    setState(() {
+                      _rate = newRate;
+                    });
+                    _calculate();
+                  }
+                },
               ),
             ),
             const SizedBox(width: 16),
             Expanded(
-              child: _buildTextField(
-                controller: _tradeInController,
-                label: 'Trade-in Value',
-                icon: Icons.swap_horiz,
+              flex: 2,
+              child: TerminalSlider(
+                value: _rate,
+                min: 0.0,
+                max: 25.0,
+                onChanged: (value) {
+                  setState(() {
+                    _rate = value;
+                    _rateController.text = _rate.toStringAsFixed(1);
+                  });
+                  _calculate();
+                },
               ),
             ),
           ],
         ),
         const SizedBox(height: 24),
         TerminalSlider(
-          label: 'INTEREST RATE: ${_rate.toStringAsFixed(1)}%',
-          value: _rate,
-          min: 0.0,
-          max: 25.0,
+          label: 'TERM: $_term MONTHS',
+          value: _term.toDouble(),
+          min: 36,
+          max: 84,
+          divisions: 4,
           onChanged: (value) {
-            setState(() => _rate = value);
-            _calculate();
-          },
-        ),
-        const SizedBox(height: 24),
-        Text('TERM (MONTHS)', style: Theme.of(context).textTheme.bodyMedium),
-        const SizedBox(height: 8),
-        SegmentedButton<int>(
-          segments: const [
-            ButtonSegment(value: 36, label: Text('36')),
-            ButtonSegment(value: 48, label: Text('48')),
-            ButtonSegment(value: 60, label: Text('60')),
-            ButtonSegment(value: 72, label: Text('72')),
-            ButtonSegment(value: 84, label: Text('84')),
-          ],
-          selected: _term != null ? {_term!} : <int>{},
-          onSelectionChanged: (Set<int> newSelection) {
             setState(() {
-              _term = newSelection.isEmpty ? null : newSelection.first;
+              _term = value.round();
             });
             _calculate();
           },
-          multiSelectionEnabled: false,
-          emptySelectionAllowed: true,
-          showSelectedIcon: false,
-          style: ButtonStyle(
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            side: WidgetStateProperty.all(
-              BorderSide(color: Theme.of(context).colorScheme.surface),
-            ),
-          ),
         ),
         const SizedBox(height: 16),
         SwitchListTile(

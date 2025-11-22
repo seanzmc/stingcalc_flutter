@@ -6,6 +6,7 @@ class TerminalSlider extends StatelessWidget {
   final double max;
   final ValueChanged<double> onChanged;
   final String? label;
+  final int? divisions;
 
   const TerminalSlider({
     super.key,
@@ -14,6 +15,7 @@ class TerminalSlider extends StatelessWidget {
     required this.max,
     required this.onChanged,
     this.label,
+    this.divisions,
   });
 
   @override
@@ -25,10 +27,7 @@ class TerminalSlider extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label != null) ...[
-          Text(
-            label!,
-            style: theme.textTheme.bodyMedium,
-          ),
+          Text(label!, style: theme.textTheme.bodyMedium),
           const SizedBox(height: 4),
         ],
         SliderTheme(
@@ -48,6 +47,7 @@ class TerminalSlider extends StatelessWidget {
             value: value,
             min: min,
             max: max,
+            divisions: divisions,
             onChanged: onChanged,
           ),
         ),
