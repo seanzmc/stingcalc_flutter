@@ -21,6 +21,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   final _termFocusNode = FocusNode();
 
   double? _ratePercent;
+  double? _minPayment;
   String? _message;
 
   @override
@@ -40,6 +41,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     _termController.text = '72';
     setState(() {
       _ratePercent = null;
+      _minPayment = null;
       _message = null;
     });
     // Focus back on the first field
@@ -54,6 +56,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     if (principal <= 0 || payment <= 0 || term == null || term <= 0) {
       setState(() {
         _ratePercent = null;
+        _minPayment = null;
         _message = null;
       });
       return;
@@ -63,8 +66,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
     if (payment < minPayment) {
       setState(() {
         _ratePercent = null;
-        _message =
-            'Payment too low. Min: \$${CurrencyInputFormatter.formatResult(minPayment)}';
+        _minPayment = minPayment;
+        _message = 'Payment too low';
       });
       return;
     }
@@ -77,6 +80,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
 
     setState(() {
       _ratePercent = rate;
+      _minPayment = null;
       _message = rate == null ? 'Unable to solve' : null;
     });
   }
@@ -205,6 +209,40 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
 
   Widget _buildVisualization(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (_minPayment != null) {
+      return Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.errorContainer,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.error_outline, color: theme.colorScheme.error),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    _message ?? 'Error',
+                    style: TextStyle(color: theme.colorScheme.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          DataReadout(
+            label: 'MINIMUM PAYMENT',
+            value: '\$${CurrencyInputFormatter.formatResult(_minPayment!)}',
+            isLarge: true,
+            valueColor: theme.colorScheme.error,
+            icon: Icons.warning_amber_rounded,
+          ),
+        ],
+      );
+    }
 
     if (_message != null) {
       return Container(
