@@ -12,8 +12,6 @@ class RateSolverScreen extends StatefulWidget {
 }
 
 class _RateSolverScreenState extends State<RateSolverScreen> {
-  final _formKey = GlobalKey<FormState>();
-
   final _principalController = TextEditingController();
   final _paymentController = TextEditingController();
   final _termController = TextEditingController(text: '72');
@@ -44,6 +42,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
       _ratePercent = null;
       _message = null;
     });
+    // Focus back on the first field
+    _principalFocusNode.requestFocus();
   }
 
   void _calculate() {
@@ -83,139 +83,168 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'RATE SOLVER',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.secondary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Card(
-                elevation: 0,
-                color: theme.colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child:
+          isDesktop
+              ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: SingleChildScrollView(child: _buildInputs(context)),
                   ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _principalController,
-                          focusNode: _principalFocusNode,
-                          autofocus: true,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted:
-                              (_) => _paymentFocusNode.requestFocus(),
-                          decoration: const InputDecoration(
-                            labelText: 'Loan Amount',
-                            prefixText: '\$ ',
-                            prefixIcon: Icon(Icons.account_balance),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [CurrencyInputFormatter()],
-                          onChanged: (_) => _calculate(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _paymentController,
-                          focusNode: _paymentFocusNode,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted:
-                              (_) => _termFocusNode.requestFocus(),
-                          decoration: const InputDecoration(
-                            labelText: 'Target Payment',
-                            prefixText: '\$ ',
-                            prefixIcon: Icon(Icons.payments),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [CurrencyInputFormatter()],
-                          onChanged: (_) => _calculate(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _termController,
-                          focusNode: _termFocusNode,
-                          textInputAction: TextInputAction.done,
-                          decoration: const InputDecoration(
-                            labelText: 'Term (Months)',
-                            prefixIcon: Icon(Icons.calendar_today),
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => _calculate(),
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _clearForm,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('RESET'),
-                          ),
-                        ),
-                      ],
+                  const SizedBox(width: 32),
+                  Expanded(
+                    flex: 5,
+                    child: SingleChildScrollView(
+                      child: _buildVisualization(context),
                     ),
                   ),
-                ),
+                ],
+              )
+              : ListView(
+                children: [
+                  _buildInputs(context),
+                  const SizedBox(height: 32),
+                  _buildVisualization(context),
+                ],
               ),
-              const SizedBox(height: 32),
-              if (_message != null)
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.errorContainer,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: theme.colorScheme.error),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          _message!,
-                          style: TextStyle(color: theme.colorScheme.error),
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                DataReadout(
-                  label: 'REQUIRED APR',
-                  value:
-                      _ratePercent != null
-                          ? '${_ratePercent!.toStringAsFixed(2)}%'
-                          : '---',
-                  isLarge: true,
-                  valueColor: theme.colorScheme.primary,
-                  icon: Icons.percent,
-                ),
-            ],
+    );
+  }
+
+  Widget _buildInputs(BuildContext context) {
+    return FocusTraversalGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'RATE SOLVER',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.secondary,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _principalController,
+            label: 'Loan Amount',
+            icon: Icons.account_balance,
+            focusNode: _principalFocusNode,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _paymentFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _paymentController,
+            label: 'Target Payment',
+            icon: Icons.payments,
+            focusNode: _paymentFocusNode,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _termFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _termController,
+            label: 'Term (Months)',
+            icon: Icons.calendar_today,
+            focusNode: _termFocusNode,
+            textInputAction: TextInputAction.done,
+            isCurrency: false,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _clearForm,
+              icon: const Icon(Icons.refresh),
+              label: const Text('RESET'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    TextInputAction? textInputAction,
+    ValueChanged<String>? onSubmitted,
+    bool isCurrency = true,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: isCurrency ? [CurrencyInputFormatter()] : [],
+      style: GoogleFonts.jetBrainsMono(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        prefixText: isCurrency ? '\$ ' : null,
+      ),
+      onChanged: (_) => _calculate(),
+    );
+  }
+
+  Widget _buildVisualization(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (_message != null) {
+      return Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.errorContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Row(
+          children: [
+            Icon(Icons.error_outline, color: theme.colorScheme.error),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                _message!,
+                style: TextStyle(color: theme.colorScheme.error),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_ratePercent == null) {
+      return Center(
+        child: Text(
+          'Enter values to calculate',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
-      ),
+      );
+    }
+
+    return DataReadout(
+      label: 'REQUIRED APR',
+      value: '${_ratePercent!.toStringAsFixed(2)}%',
+      isLarge: true,
+      valueColor: theme.colorScheme.primary,
+      icon: Icons.percent,
     );
   }
 }

@@ -12,8 +12,6 @@ class AmountCalculatorScreen extends StatefulWidget {
 }
 
 class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
-  final _formKey = GlobalKey<FormState>();
-
   final _paymentController = TextEditingController();
   final _rateController = TextEditingController(text: '6.9');
   final _termController = TextEditingController(text: '72');
@@ -49,6 +47,8 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
       _docStamps = null;
       _totalLoan = null;
     });
+    // Focus back on the first field
+    _paymentFocusNode.requestFocus();
   }
 
   void _calculate() {
@@ -82,149 +82,185 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   }
 
   String _formatCurrency(double value) {
-    return CurrencyInputFormatter.formatResult(value);
+    return '\$${CurrencyInputFormatter.formatResult(value)}';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
+    return Padding(
+      padding: const EdgeInsets.all(24.0),
+      child:
+          isDesktop
+              ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: SingleChildScrollView(child: _buildInputs(context)),
+                  ),
+                  const SizedBox(width: 32),
+                  Expanded(
+                    flex: 5,
+                    child: SingleChildScrollView(
+                      child: _buildVisualization(context),
+                    ),
+                  ),
+                ],
+              )
+              : ListView(
+                children: [
+                  _buildInputs(context),
+                  const SizedBox(height: 32),
+                  _buildVisualization(context),
+                ],
+              ),
+    );
+  }
+
+  Widget _buildInputs(BuildContext context) {
+    return FocusTraversalGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'AMOUNT CALCULATOR',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.secondary,
+              letterSpacing: 1.2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _paymentController,
+            label: 'Desired Payment',
+            icon: Icons.payments,
+            focusNode: _paymentFocusNode,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _rateFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _rateController,
+            label: 'APR (%)',
+            icon: Icons.percent,
+            focusNode: _rateFocusNode,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _termFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _termController,
+            label: 'Term (Months)',
+            icon: Icons.calendar_today,
+            focusNode: _termFocusNode,
+            textInputAction: TextInputAction.done,
+            isCurrency: false,
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Disable Florida Doc Stamps'),
+            value: _disableDocStamps,
+            onChanged: (value) {
+              setState(() {
+                _disableDocStamps = value;
+              });
+              _calculate();
+            },
+            contentPadding: EdgeInsets.zero,
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: _clearForm,
+              icon: const Icon(Icons.refresh),
+              label: const Text('RESET'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    TextInputAction? textInputAction,
+    ValueChanged<String>? onSubmitted,
+    bool isCurrency = true,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: isCurrency ? [CurrencyInputFormatter()] : [],
+      style: GoogleFonts.jetBrainsMono(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        prefixText: isCurrency ? '\$ ' : null,
+      ),
+      onChanged: (_) => _calculate(),
+    );
+  }
+
+  Widget _buildVisualization(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 600),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: ListView(
-            children: [
-              Text(
-                'AMOUNT CALCULATOR',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.secondary,
-                  letterSpacing: 1.2,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Card(
-                elevation: 0,
-                color: theme.colorScheme.surface,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  side: BorderSide(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _paymentController,
-                          focusNode: _paymentFocusNode,
-                          autofocus: true,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted:
-                              (_) => _rateFocusNode.requestFocus(),
-                          decoration: const InputDecoration(
-                            labelText: 'Desired Payment',
-                            prefixText: '\$ ',
-                            prefixIcon: Icon(Icons.payments),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          onChanged: (_) => _calculate(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _rateController,
-                          focusNode: _rateFocusNode,
-                          textInputAction: TextInputAction.next,
-                          onFieldSubmitted:
-                              (_) => _termFocusNode.requestFocus(),
-                          decoration: const InputDecoration(
-                            labelText: 'APR',
-                            suffixText: '%',
-                            prefixIcon: Icon(Icons.percent),
-                          ),
-                          keyboardType: const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          onChanged: (_) => _calculate(),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _termController,
-                          focusNode: _termFocusNode,
-                          textInputAction: TextInputAction.done,
-                          decoration: const InputDecoration(
-                            labelText: 'Term (Months)',
-                            prefixIcon: Icon(Icons.calendar_today),
-                          ),
-                          keyboardType: TextInputType.number,
-                          onChanged: (_) => _calculate(),
-                        ),
-                        const SizedBox(height: 16),
-                        SwitchListTile(
-                          title: const Text('Disable Florida Doc Stamps'),
-                          value: _disableDocStamps,
-                          onChanged: (value) {
-                            setState(() {
-                              _disableDocStamps = value;
-                            });
-                            _calculate();
-                          },
-                          contentPadding: EdgeInsets.zero,
-                        ),
-                        const SizedBox(height: 24),
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _clearForm,
-                            icon: const Icon(Icons.refresh),
-                            label: const Text('RESET'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-              if (_loanAmount != null) ...[
-                DataReadout(
-                  label: 'LOAN AMOUNT (PRE-TAX)',
-                  value: _formatCurrency(_loanAmount!),
-                  isLarge: true,
-                  valueColor: theme.colorScheme.primary,
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: DataReadout(
-                        label: 'DOC STAMPS',
-                        value: _formatCurrency(_docStamps ?? 0.0),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: DataReadout(
-                        label: 'TOTAL LOAN',
-                        value: _formatCurrency(_totalLoan ?? 0.0),
-                        valueColor: theme.colorScheme.secondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ],
+    if (_loanAmount == null) {
+      return Center(
+        child: Text(
+          'Enter values to calculate',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
           ),
         ),
-      ),
+      );
+    }
+
+    return Column(
+      children: [
+        DataReadout(
+          label: 'LOAN AMOUNT (PRE-TAX)',
+          value: _formatCurrency(_loanAmount!),
+          isLarge: true,
+          valueColor: theme.colorScheme.primary,
+        ),
+        const SizedBox(height: 24),
+        Row(
+          children: [
+            Expanded(
+              child: DataReadout(
+                label: 'DOC STAMPS',
+                value: _formatCurrency(_docStamps ?? 0.0),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: DataReadout(
+                label: 'TOTAL LOAN',
+                value: _formatCurrency(_totalLoan ?? 0.0),
+                valueColor: theme.colorScheme.secondary,
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
