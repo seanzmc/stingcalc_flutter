@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stingcalc_flutter/payment_calculator_screen.dart';
-import 'package:stingcalc_flutter/widgets/main_scaffold.dart';
 
 void main() {
   testWidgets('Reverse tab navigation should go to previous field', (
