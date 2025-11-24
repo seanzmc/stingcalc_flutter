@@ -19,7 +19,7 @@ void main() {
           body: Row(
             children: [
               // Dummy sidebar
-              Container(
+              SizedBox(
                 width: 200,
                 child: Column(
                   children: [
