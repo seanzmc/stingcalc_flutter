@@ -1,5 +1,11 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
+import 'utils/currency_input_formatter.dart';
+import 'widgets/data_readout.dart';
+import 'widgets/terminal_chart.dart';
+import 'widgets/terminal_slider.dart';
 
 class PaymentCalculatorScreen extends StatefulWidget {
   final double? initialLoanAmount;
@@ -12,24 +18,23 @@ class PaymentCalculatorScreen extends StatefulWidget {
 }
 
 class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
-  final _formKey = GlobalKey<FormState>();
-
+  // Inputs
   final _loanAmountController = TextEditingController();
   final _rateController = TextEditingController();
-  final _termController = TextEditingController();
 
-  final _loanFocusNode = FocusNode();
+  final _loanAmountFocusNode = FocusNode();
   final _rateFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
 
+  double _rate = 6.9;
+  int _term = 60;
   bool _disableDocStamps = false;
 
-  double? _payment;
-  double? _docStamps;
-  double? _totalLoan;
-  double? _totalCost;
-
-  String? _errorMessage;
+  // Results
+  double _monthlyPayment = 0;
+  double _totalInterest = 0;
+  double _totalPrincipal = 0;
+  double _totalCost = 0;
 
   @override
   void initState() {
@@ -37,227 +42,317 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     if (widget.initialLoanAmount != null) {
       _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
     }
-    _rateController.text = '6.9';
-    _termController.text = '72';
-  }
-
-  @override
-  void didUpdateWidget(covariant PaymentCalculatorScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialLoanAmount != null &&
-        widget.initialLoanAmount != oldWidget.initialLoanAmount) {
-      _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
-    }
-  }
-
-  void _clearForm() {
-    _loanAmountController.clear();
-    _rateController.text = '6.9';
-    _termController.text = '72';
-    _loanFocusNode.requestFocus();
-
-    setState(() {
-      _disableDocStamps = false;
-      _payment = null;
-      _docStamps = null;
-      _totalLoan = null;
-      _totalCost = null;
-      _errorMessage = null;
-    });
+    _rateController.text = _rate.toStringAsFixed(1);
+    _calculate();
   }
 
   @override
   void dispose() {
     _loanAmountController.dispose();
     _rateController.dispose();
-    _termController.dispose();
-    _loanFocusNode.dispose();
+    _loanAmountFocusNode.dispose();
     _rateFocusNode.dispose();
     _termFocusNode.dispose();
     super.dispose();
   }
 
-  String? _requiredNumberValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Required';
-    }
-    final v = double.tryParse(value);
-    if (v == null) return 'Enter a number';
-    if (v <= 0) return 'Must be > 0';
-    return null;
-  }
-
-  // Formatting helper for commas
-  String _formatCurrency(double value) {
-    final numberStr = value.toStringAsFixed(2);
-    final parts = numberStr.split('.');
-    final integerPart = parts[0].replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-      (Match m) => '${m[1]},',
-    );
-    return '\$$integerPart.${parts[1]}';
-  }
-
   void _calculate() {
-    final valid = _formKey.currentState!.validate();
-    if (!valid) {
+    final loanAmount = CurrencyInputFormatter.parse(_loanAmountController.text);
+
+    final netLoanAmount = loanAmount;
+
+    if (netLoanAmount <= 0) {
       setState(() {
-        _errorMessage = 'Please fix the highlighted fields.';
+        _monthlyPayment = 0;
+        _totalInterest = 0;
+        _totalPrincipal = 0;
+        _totalCost = 0;
       });
       return;
     }
 
-    setState(() {
-      _errorMessage = null;
-    });
-
-    final loanAmount = double.parse(_loanAmountController.text);
-    final rate = double.parse(_rateController.text);
-    final term = int.parse(_termController.text);
-
-    final docStamps = _disableDocStamps ? 0.0 : LoanMath.docStamps(loanAmount);
-    final principalWithTax = loanAmount + docStamps;
+    final docStamps =
+        _disableDocStamps ? 0.0 : LoanMath.docStamps(netLoanAmount);
+    final principalWithTax = netLoanAmount + docStamps;
 
     final monthly = LoanMath.monthlyPayment(
       principal: principalWithTax,
-      termMonths: term,
-      annualRatePercent: rate,
+      termMonths: _term,
+      annualRatePercent: _rate,
     );
 
-    final totalInterest = monthly * term - principalWithTax;
+    final totalInterest = monthly * _term - principalWithTax;
     final totalCost = principalWithTax + totalInterest;
 
     setState(() {
-      _payment = monthly;
-      _docStamps = docStamps;
-      _totalLoan = principalWithTax;
+      _monthlyPayment = monthly;
+      _totalPrincipal = principalWithTax;
+      _totalInterest = totalInterest;
       _totalCost = totalCost;
     });
   }
 
+  String _formatCurrency(double value) {
+    return '\$${CurrencyInputFormatter.formatResult(value)}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
+
     return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Form(
-        key: _formKey,
-        child: ListView(
-          children: [
-            Text(
-              'Payment Calculator',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            if (_errorMessage != null) ...[
-              Text(
-                _errorMessage!,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.error,
-                  fontWeight: FontWeight.w600,
-                ),
+      padding: const EdgeInsets.all(24.0),
+      child:
+          isDesktop
+              ? Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: SingleChildScrollView(child: _buildInputs(context)),
+                  ),
+                  const SizedBox(width: 32),
+                  Expanded(
+                    flex: 5,
+                    child: SingleChildScrollView(
+                      child: _buildVisualization(context),
+                    ),
+                  ),
+                ],
+              )
+              : ListView(
+                children: [
+                  _buildInputs(context),
+                  const SizedBox(height: 32),
+                  _buildVisualization(context),
+                ],
               ),
-              const SizedBox(height: 8),
-            ],
-            TextFormField(
-              controller: _loanAmountController,
-              focusNode: _loanFocusNode,
-              autofocus: true,
-              decoration: const InputDecoration(
-                labelText: 'Loan Amount',
-                prefixText: '\$',
-              ),
-              // Updated keyboard type
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              validator: _requiredNumberValidator,
-              onFieldSubmitted: (_) {
-                FocusScope.of(context).requestFocus(_rateFocusNode);
-              },
+    );
+  }
+
+  Widget _buildInputs(BuildContext context) {
+    return FocusTraversalGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'LOAN DETAILS',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.secondary,
+              letterSpacing: 1.2,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _rateController,
-              focusNode: _rateFocusNode,
-              decoration: const InputDecoration(
-                labelText: 'APR',
-                suffixText: '%',
-              ),
-              // Updated keyboard type
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              textInputAction: TextInputAction.next,
-              validator: _requiredNumberValidator,
-              onFieldSubmitted: (_) {
-                FocusScope.of(context).requestFocus(_termFocusNode);
-              },
+          ),
+          const SizedBox(height: 16),
+          _buildTextField(
+            controller: _loanAmountController,
+            label: 'Vehicle Price',
+            icon: Icons.directions_car,
+            focusNode: _loanAmountFocusNode,
+            autofocus: true,
+            textInputAction: TextInputAction.next,
+            onSubmitted: (_) => _rateFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          const SizedBox(height: 16),
+          TextField(
+            controller: _rateController,
+            focusNode: _rateFocusNode,
+            textInputAction: TextInputAction.next,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _termController,
-              focusNode: _termFocusNode,
-              decoration: const InputDecoration(labelText: 'Term (months)'),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.done,
-              validator: (value) {
-                final basic = _requiredNumberValidator(value);
-                if (basic != null) return basic;
-                final v = int.tryParse(value!.trim());
-                if (v == null) return 'Enter a whole number';
-                if (v <= 0) return 'Term must be > 0';
-                return null;
-              },
-              onFieldSubmitted: (_) => _calculate(),
+            decoration: const InputDecoration(
+              labelText: 'Rate (%)',
+              prefixIcon: Icon(Icons.percent, size: 20),
             ),
-            const SizedBox(height: 12),
-            SwitchListTile(
-              title: const Text('Disable Documentary Stamps'),
-              value: _disableDocStamps,
-              onChanged: (value) {
+            onChanged: (value) {
+              final newRate = double.tryParse(value);
+              if (newRate != null && newRate >= 0 && newRate <= 25) {
                 setState(() {
-                  _disableDocStamps = value;
+                  _rate = newRate;
                 });
-                if (_payment != null) {
-                  _calculate();
-                }
-              },
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                ElevatedButton(
-                  onPressed: _calculate,
-                  child: const Text('Calculate Payment'),
-                ),
-                const SizedBox(width: 12),
-                OutlinedButton(
-                  onPressed: _clearForm,
-                  child: const Text('Clear'),
-                ),
-              ],
-            ),
-            if (_payment != null) ...[
-              const SizedBox(height: 24),
-              Text(
-                'Estimated Payment',
-                style: Theme.of(context).textTheme.titleMedium,
+                _calculate();
+              }
+            },
+            onSubmitted: (_) => _termFocusNode.requestFocus(),
+          ),
+          const SizedBox(height: 24),
+          const SizedBox(height: 24),
+          TerminalSlider(
+            labelWidget: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium,
+                children: [
+                  const TextSpan(text: 'TERM: '),
+                  TextSpan(
+                    text: '$_term',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const TextSpan(text: ' MONTHS'),
+                ],
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${_formatCurrency(_payment!)} / month',
-                style: Theme.of(context).textTheme.headlineMedium,
-              ),
-              const SizedBox(height: 16),
-              if (_docStamps != null)
-                Text(
-                  'Documentary Stamp Tax: ${_formatCurrency(_docStamps!)}',
+            ),
+            value: _term.toDouble(),
+            min: 36,
+            max: 84,
+            divisions: 4,
+            focusNode: _termFocusNode,
+            onChanged: (value) {
+              setState(() {
+                _term = value.round();
+              });
+              _calculate();
+            },
+          ),
+          const SizedBox(height: 16),
+          SwitchListTile(
+            title: const Text('Disable Documentary Stamps'),
+            value: _disableDocStamps,
+            onChanged: (value) {
+              setState(() => _disableDocStamps = value);
+              _calculate();
+            },
+            contentPadding: EdgeInsets.zero,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    FocusNode? focusNode,
+    bool autofocus = false,
+    TextInputAction? textInputAction,
+    ValueChanged<String>? onSubmitted,
+  }) {
+    return TextField(
+      controller: controller,
+      focusNode: focusNode,
+      autofocus: autofocus,
+      textInputAction: textInputAction,
+      onSubmitted: onSubmitted,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [CurrencyInputFormatter()],
+      style: GoogleFonts.jetBrainsMono(
+        fontSize: 24,
+        fontWeight: FontWeight.bold,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20),
+        prefixText: '\$ ',
+      ),
+      onChanged: (_) => _calculate(),
+    );
+  }
+
+  Widget _buildVisualization(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      children: [
+        DataReadout(
+          label: 'Monthly Payment',
+          value: _formatCurrency(_monthlyPayment),
+          isLarge: true,
+          valueColor: colorScheme.primary,
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          height: 300,
+          child: TerminalChart(
+            centerText: _formatCurrency(_totalCost),
+            subCenterText: 'Total Cost',
+            sections: [
+              PieChartSectionData(
+                color: colorScheme.primary,
+                value: _totalPrincipal,
+                title:
+                    '${((_totalPrincipal / _totalCost) * 100).toStringAsFixed(0)}%',
+                radius: 25,
+                titleStyle: GoogleFonts.jetBrainsMono(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onPrimary,
                 ),
-              if (_totalLoan != null)
-                Text('Total Loan Amount: ${_formatCurrency(_totalLoan!)}'),
-              if (_totalCost != null)
-                Text('Total Cost of Loan: ${_formatCurrency(_totalCost!)}'),
+              ),
+              PieChartSectionData(
+                color: colorScheme.secondary,
+                value: _totalInterest,
+                title:
+                    '${((_totalInterest / _totalCost) * 100).toStringAsFixed(0)}%',
+                radius: 25,
+                titleStyle: GoogleFonts.jetBrainsMono(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSecondary,
+                ),
+              ),
             ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            _buildLegendItem(
+              context,
+              color: colorScheme.primary,
+              label: 'Principal',
+              value: _formatCurrency(_totalPrincipal),
+            ),
+            const SizedBox(width: 24),
+            _buildLegendItem(
+              context,
+              color: colorScheme.secondary,
+              label: 'Interest',
+              value: _formatCurrency(_totalInterest),
+            ),
           ],
         ),
-      ),
+      ],
+    );
+  }
+
+  Widget _buildLegendItem(
+    BuildContext context, {
+    required Color color,
+    required String label,
+    required String value,
+  }) {
+    return Row(
+      children: [
+        Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.bodySmall),
+            Text(
+              value,
+              style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
