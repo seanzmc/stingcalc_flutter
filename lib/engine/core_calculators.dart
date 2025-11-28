@@ -294,6 +294,8 @@ class BiweeklyResult {
     required this.payoffDate,
     required this.schedule,
   });
+
+  double get totalCost => totalPrincipal + totalInterest;
 }
 
 class AmortizationEntry {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
+
 import '../engine/core_calculators.dart';
 
 class AmortizationModal extends StatefulWidget {
@@ -109,8 +109,11 @@ class _AmortizationModalState extends State<AmortizationModal>
             child: TabBarView(
               controller: _tabController,
               children: [
-                _buildScheduleList(_monthlySchedule),
-                _buildScheduleList(widget.biweeklySchedule),
+                _buildScheduleList(_monthlySchedule, indexLabel: 'Month'),
+                _buildScheduleList(
+                  widget.biweeklySchedule,
+                  indexLabel: 'Payment',
+                ),
               ],
             ),
           ),
@@ -119,14 +122,17 @@ class _AmortizationModalState extends State<AmortizationModal>
     );
   }
 
-  Widget _buildScheduleList(List<AmortizationEntry> schedule) {
+  Widget _buildScheduleList(
+    List<AmortizationEntry> schedule, {
+    required String indexLabel,
+  }) {
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.all(16.0),
           child: Row(
             children: [
-              Expanded(child: _buildHeader('Date')),
+              Expanded(child: _buildHeader(indexLabel)),
               Expanded(child: _buildHeader('Payment')),
               Expanded(child: _buildHeader('Interest')),
               Expanded(child: _buildHeader('Principal')),
@@ -150,7 +156,7 @@ class _AmortizationModalState extends State<AmortizationModal>
                   children: [
                     Expanded(
                       child: Text(
-                        DateFormat('MMM yyyy').format(entry.date),
+                        '$indexLabel ${index + 1}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),

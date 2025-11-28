@@ -7,6 +7,9 @@ void main() {
   testWidgets('PaymentCalculatorScreen refactor verification', (
     WidgetTester tester,
   ) async {
+    tester.view.physicalSize = const Size(1200, 800);
+    tester.view.devicePixelRatio = 1.0;
+
     await tester.pumpWidget(
       MaterialApp(home: Scaffold(body: PaymentCalculatorScreen())),
     );
@@ -21,8 +24,12 @@ void main() {
     expect(find.byType(TerminalSlider), findsOneWidget); // Term only
 
     // Test Rate TextField interaction
+    await tester.enterText(
+      find.widgetWithText(TextField, 'Vehicle Price'),
+      '30000',
+    );
     await tester.enterText(find.widgetWithText(TextField, 'Rate (%)'), '10.0');
-    await tester.pump();
+    await tester.pumpAndSettle();
 
     // 3. Verify Term Selection (Slider)
     // Since we use RichText now, find.text won't work for the whole string.
@@ -37,6 +44,21 @@ void main() {
 
     // Verify it is interactive
     await tester.tap(termSliderFinder); // Tapping center should change value
-    await tester.pump();
+    await tester.pumpAndSettle();
+
+    // 4. Verify Side-by-Side UI
+    // Check for chart titles
+    expect(find.text('STANDARD'), findsOneWidget);
+    expect(find.text('BIWEEKLY'), findsOneWidget);
+
+    // Check for Combined Summary
+    expect(find.text('BIWEEKLY SAVINGS'), findsOneWidget);
+    expect(find.text('Interest Saved'), findsOneWidget);
+    expect(find.text('Time Saved'), findsOneWidget);
+
+    // Check for Amortization Button
+    expect(find.text('View Amortization Schedule'), findsOneWidget);
+
+    addTearDown(tester.view.resetPhysicalSize);
   });
 }

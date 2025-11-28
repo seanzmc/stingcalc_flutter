@@ -68,8 +68,8 @@ class TerminalSlider extends StatelessWidget {
               if (onSubmitted != null &&
                   (event.logicalKey == LogicalKeyboardKey.enter ||
                       event.logicalKey == LogicalKeyboardKey.numpadEnter) &&
-                  event is KeyUpEvent) {
-                // Trigger on KeyUp to avoid repeats or conflicts
+                  event is KeyDownEvent) {
+                // Trigger on KeyDown to avoid catching the KeyUp from previous field
                 onSubmitted!();
               }
             },

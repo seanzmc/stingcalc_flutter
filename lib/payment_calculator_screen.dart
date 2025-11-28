@@ -31,7 +31,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   int _term = 60;
 
   // Focus Nodes
-  final _biweeklyFocusNode = FocusNode();
 
   // Results
   double _monthlyPayment = 0;
@@ -40,7 +39,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   double _totalCost = 0;
 
   // Biweekly Comparison
-  bool _isBiweeklyComparisonActive = false;
+  // Biweekly Comparison
   BiweeklyResult? _biweeklyResult;
 
   @override
@@ -78,7 +77,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     _loanAmountFocusNode.dispose();
     _rateFocusNode.dispose();
     _termFocusNode.dispose();
-    _biweeklyFocusNode.dispose();
     super.dispose();
   }
 
@@ -109,13 +107,11 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     final totalCost = principalWithTax + totalInterest;
 
     BiweeklyResult? biweeklyResult;
-    if (_isBiweeklyComparisonActive) {
-      biweeklyResult = LoanMath.calculateBiweeklyAmortization(
-        principal: principalWithTax,
-        annualRatePercent: _rate,
-        monthlyPayment: monthly,
-      );
-    }
+    biweeklyResult = LoanMath.calculateBiweeklyAmortization(
+      principal: principalWithTax,
+      annualRatePercent: _rate,
+      monthlyPayment: monthly,
+    );
 
     setState(() {
       _monthlyPayment = monthly;
@@ -214,7 +210,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
                 _calculate();
               }
             },
-            onSubmitted: (_) => _termFocusNode.requestFocus(),
           ),
           const SizedBox(height: 24),
           const SizedBox(height: 24),
@@ -240,29 +235,12 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             max: 84,
             divisions: 4,
             focusNode: _termFocusNode,
-
-            onSubmitted: () => _biweeklyFocusNode.requestFocus(),
             onChanged: (value) {
               setState(() {
                 _term = value.round();
               });
               _calculate();
             },
-          ),
-          const SizedBox(height: 16),
-          SwitchListTile(
-            title: const Text('Compare Biweekly Offset'),
-            subtitle: Text(
-              'Pay half every 14 days',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            value: _isBiweeklyComparisonActive,
-            focusNode: _biweeklyFocusNode,
-            onChanged: (value) {
-              setState(() => _isBiweeklyComparisonActive = value);
-              _calculate();
-            },
-            contentPadding: EdgeInsets.zero,
           ),
         ],
       ),
@@ -306,39 +284,122 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
 
     return Column(
       children: [
+        // Standard Monthly Payment
         DataReadout(
           label: 'Monthly Payment',
           value: _formatCurrency(_monthlyPayment),
           isLarge: true,
           valueColor: colorScheme.primary,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
+
+        // Side-by-Side Charts
+        LayoutBuilder(
+          builder: (context, constraints) {
+            // Check if we have enough width for side-by-side
+            final isWide = constraints.maxWidth > 600;
+
+            if (isWide) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildChartSection(
+                      context,
+                      'Standard',
+                      _totalCost,
+                      _totalPrincipal,
+                      _totalInterest,
+                    ),
+                  ),
+                  const SizedBox(width: 24),
+                  Expanded(
+                    child: _buildChartSection(
+                      context,
+                      'Biweekly',
+                      _biweeklyResult?.totalCost ?? 0,
+                      _totalPrincipal,
+                      _biweeklyResult?.totalInterest ?? 0,
+                    ),
+                  ),
+                ],
+              );
+            } else {
+              return Column(
+                children: [
+                  _buildChartSection(
+                    context,
+                    'Standard',
+                    _totalCost,
+                    _totalPrincipal,
+                    _totalInterest,
+                  ),
+                  const SizedBox(height: 32),
+                  _buildChartSection(
+                    context,
+                    'Biweekly',
+                    _biweeklyResult?.totalCost ?? 0,
+                    _totalPrincipal,
+                    _biweeklyResult?.totalInterest ?? 0,
+                  ),
+                ],
+              );
+            }
+          },
+        ),
+
+        const SizedBox(height: 32),
+
+        // Combined Summary
+        if (_biweeklyResult != null) _buildCombinedSummary(context),
+      ],
+    );
+  }
+
+  Widget _buildChartSection(
+    BuildContext context,
+    String title,
+    double totalCost,
+    double principal,
+    double interest,
+  ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Text(
+          title.toUpperCase(),
+          style: GoogleFonts.jetBrainsMono(
+            fontWeight: FontWeight.bold,
+            color: colorScheme.secondary,
+            letterSpacing: 1.2,
+          ),
+        ),
+        const SizedBox(height: 16),
         SizedBox(
-          height: 300,
+          height: 200, // Slightly smaller height for side-by-side
           child: TerminalChart(
-            centerText: _formatCurrency(_totalCost),
+            centerText: _formatCurrency(totalCost),
             subCenterText: 'Total Cost',
             sections: [
               PieChartSectionData(
                 color: colorScheme.primary,
-                value: _totalPrincipal,
-                title:
-                    '${((_totalPrincipal / _totalCost) * 100).toStringAsFixed(0)}%',
-                radius: 25,
+                value: principal,
+                title: '${((principal / totalCost) * 100).toStringAsFixed(0)}%',
+                radius: 20,
                 titleStyle: GoogleFonts.jetBrainsMono(
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onPrimary,
                 ),
               ),
               PieChartSectionData(
                 color: colorScheme.secondary,
-                value: _totalInterest,
-                title:
-                    '${((_totalInterest / _totalCost) * 100).toStringAsFixed(0)}%',
-                radius: 25,
+                value: interest,
+                title: '${((interest / totalCost) * 100).toStringAsFixed(0)}%',
+                radius: 20,
                 titleStyle: GoogleFonts.jetBrainsMono(
-                  fontSize: 12,
+                  fontSize: 10,
                   fontWeight: FontWeight.bold,
                   color: colorScheme.onSecondary,
                 ),
@@ -346,30 +407,136 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 16),
+        // Simplified Legend
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildLegendItem(
               context,
-              color: colorScheme.primary,
-              label: 'Principal',
-              value: _formatCurrency(_totalPrincipal),
-            ),
-            const SizedBox(width: 24),
-            _buildLegendItem(
-              context,
               color: colorScheme.secondary,
               label: 'Interest',
-              value: _formatCurrency(_totalInterest),
+              value: _formatCurrency(interest),
             ),
           ],
         ),
+      ],
+    );
+  }
 
-        if (_isBiweeklyComparisonActive && _biweeklyResult != null) ...[
-          const SizedBox(height: 32),
-          _buildBiweeklySummary(context),
+  Widget _buildCombinedSummary(BuildContext context) {
+    final savings = _totalInterest - (_biweeklyResult?.totalInterest ?? 0);
+    final monthsSaved =
+        _term -
+        ((_biweeklyResult?.payoffDate.difference(DateTime.now()).inDays ?? 0) /
+                30)
+            .round();
+
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.savings_outlined,
+                color: Theme.of(context).colorScheme.primary,
+                size: 28,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                'BIWEEKLY SAVINGS',
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Expanded(
+                child: _buildSummaryMetric(
+                  context,
+                  'Interest Saved',
+                  _formatCurrency(savings),
+                  isPositive: true,
+                ),
+              ),
+              Container(
+                width: 1,
+                height: 40,
+                color: Theme.of(context).dividerColor,
+              ),
+              Expanded(
+                child: _buildSummaryMetric(
+                  context,
+                  'Time Saved',
+                  '$monthsSaved months',
+                  isPositive: true,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder:
+                      (context) => AmortizationModal(
+                        biweeklySchedule: _biweeklyResult!.schedule,
+                        monthlyPayment: _monthlyPayment,
+                        principal: _totalPrincipal,
+                        rate: _rate,
+                        termMonths: _term,
+                      ),
+                );
+              },
+              icon: const Icon(Icons.list_alt),
+              label: const Text('View Amortization Schedule'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryMetric(
+    BuildContext context,
+    String label,
+    String value, {
+    bool isPositive = false,
+  }) {
+    return Column(
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: isPositive ? Colors.green : null,
+          ),
+        ),
       ],
     );
   }
@@ -397,104 +564,6 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
               style: GoogleFonts.jetBrainsMono(fontWeight: FontWeight.bold),
             ),
           ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBiweeklySummary(BuildContext context) {
-    final savings = _totalInterest - _biweeklyResult!.totalInterest;
-    final monthsSaved =
-        _term -
-        (_biweeklyResult!.payoffDate.difference(DateTime.now()).inDays / 30)
-            .round();
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(
-                Icons.savings_outlined,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                'BIWEEKLY SAVINGS',
-                style: GoogleFonts.jetBrainsMono(
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          _buildSummaryRow(
-            context,
-            'Interest Saved',
-            _formatCurrency(savings),
-            isPositive: true,
-          ),
-          const SizedBox(height: 8),
-          _buildSummaryRow(
-            context,
-            'Time Saved',
-            '$monthsSaved months',
-            isPositive: true,
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                showModalBottomSheet(
-                  context: context,
-                  isScrollControlled: true,
-                  backgroundColor: Colors.transparent,
-                  builder:
-                      (context) => AmortizationModal(
-                        biweeklySchedule: _biweeklyResult!.schedule,
-                        monthlyPayment: _monthlyPayment,
-                        principal: _totalPrincipal,
-                        rate: _rate,
-                        termMonths: _term,
-                      ),
-                );
-              },
-              icon: const Icon(Icons.list_alt),
-              label: const Text('View Amortization Schedule'),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(
-    BuildContext context,
-    String label,
-    String value, {
-    bool isPositive = false,
-  }) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(label, style: Theme.of(context).textTheme.bodyMedium),
-        Text(
-          value,
-          style: GoogleFonts.jetBrainsMono(
-            fontWeight: FontWeight.bold,
-            color: isPositive ? Colors.green : null,
-          ),
         ),
       ],
     );
