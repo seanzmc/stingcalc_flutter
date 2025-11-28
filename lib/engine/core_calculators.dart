@@ -186,6 +186,130 @@ class LoanMath {
     final tax = units * 0.35;
     return tax > 2450 ? 2450 : tax.toDouble();
   }
+
+  /// Calculates a biweekly amortization schedule and summary.
+  ///
+  /// [principal] = total loan amount.
+  /// [annualRatePercent] = APR (e.g. 7.5).
+  /// [monthlyPayment] = The standard monthly payment amount to base the biweekly payment on.
+  /// [startDate] = The date the loan starts (defaults to now if null).
+  static BiweeklyResult calculateBiweeklyAmortization({
+    required double principal,
+    required double annualRatePercent,
+    required double monthlyPayment,
+    DateTime? startDate,
+  }) {
+    final start = startDate ?? DateTime.now();
+    final dailyRate = annualRatePercent / 100 / 365;
+    final biweeklyPayment = monthlyPayment / 2;
+
+    double currentBalance = principal;
+    double totalInterest = 0;
+    double totalPrincipalPaid = 0;
+
+    // We'll track the schedule.
+    // For performance, maybe we only store payment dates, but let's store all for now.
+    final schedule = <AmortizationEntry>[];
+
+    DateTime currentDate = start;
+    double accruedInterest = 0;
+
+    // Safety break to prevent infinite loops if payment is too low (though it shouldn't be if based on amortized monthly).
+    int days = 0;
+    const maxDays = 365 * 50; // 50 years limit
+
+    while (currentBalance > 0.01 && days < maxDays) {
+      // Daily interest accrual
+      final dailyInterest = currentBalance * dailyRate;
+      accruedInterest += dailyInterest;
+
+      // Move to next day
+      currentDate = currentDate.add(const Duration(days: 1));
+      days++;
+
+      // Payment every 14 days
+      if (days % 14 == 0) {
+        double payment = biweeklyPayment;
+
+        // If final payment is less than scheduled
+        double interestToPay = accruedInterest;
+        double principalToPay = payment - interestToPay;
+
+        // Handle final payoff scenario
+        if (currentBalance + interestToPay < payment) {
+          payment = currentBalance + interestToPay;
+          principalToPay = currentBalance;
+        }
+
+        if (principalToPay < 0) {
+          // Payment doesn't cover interest - negative amortization or just interest only
+          principalToPay = 0;
+          interestToPay = payment;
+          // Remaining interest stays in accrued? Or is capitalized?
+          // Simple interest usually just keeps accruing.
+          // For this calc, let's assume we pay what we can of interest.
+          accruedInterest -= interestToPay;
+        } else {
+          accruedInterest = 0; // Interest fully paid
+          currentBalance -= principalToPay;
+          totalPrincipalPaid += principalToPay;
+        }
+
+        totalInterest += interestToPay;
+
+        schedule.add(
+          AmortizationEntry(
+            date: currentDate,
+            payment: payment,
+            interest: interestToPay,
+            principal: principalToPay,
+            balance: currentBalance,
+          ),
+        );
+      }
+    }
+
+    // Compare with standard monthly
+    // We need to know the standard term to calculate savings.
+    // But we can just return the raw biweekly data and let the UI compare.
+
+    return BiweeklyResult(
+      totalInterest: totalInterest,
+      totalPrincipal: totalPrincipalPaid,
+      payoffDate: currentDate,
+      schedule: schedule,
+    );
+  }
+}
+
+class BiweeklyResult {
+  final double totalInterest;
+  final double totalPrincipal;
+  final DateTime payoffDate;
+  final List<AmortizationEntry> schedule;
+
+  BiweeklyResult({
+    required this.totalInterest,
+    required this.totalPrincipal,
+    required this.payoffDate,
+    required this.schedule,
+  });
+}
+
+class AmortizationEntry {
+  final DateTime date;
+  final double payment;
+  final double interest;
+  final double principal;
+  final double balance;
+
+  AmortizationEntry({
+    required this.date,
+    required this.payment,
+    required this.interest,
+    required this.principal,
+    required this.balance,
+  });
 }
 
 /// YTD income → monthly + annual, port of calculateMonthlyIncome.
@@ -215,9 +339,10 @@ class IncomeCalculator {
     final year = checkDate.year;
 
     // Start date: Jan 1 of the year, or hire date if hired this year.
-    final startDate = (hireDate != null && hireDate.year == year)
-        ? hireDate
-        : DateTime(year, 1, 1);
+    final startDate =
+        (hireDate != null && hireDate.year == year)
+            ? hireDate
+            : DateTime(year, 1, 1);
 
     // Check date before hire date? Not allowed.
     if (hireDate != null && checkDate.isBefore(hireDate)) {
@@ -226,7 +351,8 @@ class IncomeCalculator {
 
     // Month difference ignoring partials.
     final monthDiff =
-        (checkDate.year - startDate.year) * 12 + (checkDate.month - startDate.month);
+        (checkDate.year - startDate.year) * 12 +
+        (checkDate.month - startDate.month);
 
     final daysInStartMonth =
         DateTime(startDate.year, startDate.month + 1, 0).day;
@@ -234,9 +360,10 @@ class IncomeCalculator {
         DateTime(checkDate.year, checkDate.month + 1, 0).day;
 
     // Partial month fractions.
-    final startPartial = (hireDate != null && hireDate.year == year)
-        ? (startDate.day - 1) / daysInStartMonth
-        : 0.0;
+    final startPartial =
+        (hireDate != null && hireDate.year == year)
+            ? (startDate.day - 1) / daysInStartMonth
+            : 0.0;
     final checkPartial = checkDate.day / daysInCheckMonth;
 
     var months = monthDiff + checkPartial - startPartial;
