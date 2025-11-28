@@ -29,7 +29,9 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
 
   double _rate = 6.9;
   int _term = 60;
-  bool _disableDocStamps = false;
+
+  // Focus Nodes
+  final _biweeklyFocusNode = FocusNode();
 
   // Results
   double _monthlyPayment = 0;
@@ -48,7 +50,25 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
     }
     _rateController.text = _rate.toStringAsFixed(1);
+
+    // Add listeners for select-all on focus
+    _loanAmountFocusNode.addListener(
+      () => _selectAllOnFocus(_loanAmountFocusNode, _loanAmountController),
+    );
+    _rateFocusNode.addListener(
+      () => _selectAllOnFocus(_rateFocusNode, _rateController),
+    );
+
     _calculate();
+  }
+
+  void _selectAllOnFocus(FocusNode node, TextEditingController controller) {
+    if (node.hasFocus) {
+      controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.text.length,
+      );
+    }
   }
 
   @override
@@ -58,6 +78,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     _loanAmountFocusNode.dispose();
     _rateFocusNode.dispose();
     _termFocusNode.dispose();
+    _biweeklyFocusNode.dispose();
     super.dispose();
   }
 
@@ -76,9 +97,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
       return;
     }
 
-    final docStamps =
-        _disableDocStamps ? 0.0 : LoanMath.docStamps(netLoanAmount);
-    final principalWithTax = netLoanAmount + docStamps;
+    final principalWithTax = netLoanAmount;
 
     final monthly = LoanMath.monthlyPayment(
       principal: principalWithTax,
@@ -221,6 +240,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
             max: 84,
             divisions: 4,
             focusNode: _termFocusNode,
+
+            onSubmitted: () => _biweeklyFocusNode.requestFocus(),
             onChanged: (value) {
               setState(() {
                 _term = value.round();
@@ -230,21 +251,13 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           ),
           const SizedBox(height: 16),
           SwitchListTile(
-            title: const Text('Disable Documentary Stamps'),
-            value: _disableDocStamps,
-            onChanged: (value) {
-              setState(() => _disableDocStamps = value);
-              _calculate();
-            },
-            contentPadding: EdgeInsets.zero,
-          ),
-          SwitchListTile(
             title: const Text('Compare Biweekly Offset'),
             subtitle: Text(
               'Pay half every 14 days',
               style: Theme.of(context).textTheme.bodySmall,
             ),
             value: _isBiweeklyComparisonActive,
+            focusNode: _biweeklyFocusNode,
             onChanged: (value) {
               setState(() => _isBiweeklyComparisonActive = value);
               _calculate();
