@@ -36,8 +36,14 @@ if (!window._flutter) {
 }
 _flutter.buildConfig = {"engineRevision":"13e658725ddaa270601426d1485636157e38c34c","builds":[{"compileTarget":"dart2js","renderer":"canvaskit","mainJsPath":"main.dart.js"},{}]};
 
+
 _flutter.loader.load({
-  serviceWorkerSettings: {
-    serviceWorkerVersion: "2700729875"
+  onEntrypointLoaded: async function(engineInitializer) {
+    const appRunner = await engineInitializer.initializeEngine({
+      rendererConfig: {
+        useColorEmoji: false
+      }
+    });
+    await appRunner.runApp();
   }
 });
