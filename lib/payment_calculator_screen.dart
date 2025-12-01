@@ -28,7 +28,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
   final _termFocusNode = FocusNode();
 
   double _rate = 6.9;
-  int _term = 60;
+  int _term = 72;
 
   // Focus Nodes
 
@@ -47,6 +47,8 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
     super.initState();
     if (widget.initialLoanAmount != null) {
       _loanAmountController.text = widget.initialLoanAmount!.toStringAsFixed(2);
+    } else {
+      _loanAmountController.text = '45000.00';
     }
     _rateController.text = _rate.toStringAsFixed(1);
 
@@ -177,7 +179,7 @@ class _PaymentCalculatorScreenState extends State<PaymentCalculatorScreen> {
           const SizedBox(height: 16),
           _buildTextField(
             controller: _loanAmountController,
-            label: 'Vehicle Price',
+            label: 'Amount Borrowed',
             icon: Icons.directions_car,
             focusNode: _loanAmountFocusNode,
             autofocus: true,
