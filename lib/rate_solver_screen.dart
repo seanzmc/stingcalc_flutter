@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
 import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
+import 'widgets/terminal_slider.dart';
 
 class RateSolverScreen extends StatefulWidget {
   const RateSolverScreen({super.key});
@@ -14,21 +15,41 @@ class RateSolverScreen extends StatefulWidget {
 class _RateSolverScreenState extends State<RateSolverScreen> {
   final _principalController = TextEditingController();
   final _paymentController = TextEditingController();
-  final _termController = TextEditingController(text: '72');
 
   final _principalFocusNode = FocusNode();
   final _paymentFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
 
+  int _term = 72;
   double? _ratePercent;
   double? _minPayment;
   String? _message;
 
   @override
+  void initState() {
+    super.initState();
+    // Add listeners for select-all on focus
+    _principalFocusNode.addListener(
+      () => _selectAllOnFocus(_principalFocusNode, _principalController),
+    );
+    _paymentFocusNode.addListener(
+      () => _selectAllOnFocus(_paymentFocusNode, _paymentController),
+    );
+  }
+
+  void _selectAllOnFocus(FocusNode node, TextEditingController controller) {
+    if (node.hasFocus) {
+      controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.text.length,
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _principalController.dispose();
     _paymentController.dispose();
-    _termController.dispose();
     _principalFocusNode.dispose();
     _paymentFocusNode.dispose();
     _termFocusNode.dispose();
@@ -38,8 +59,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   void _clearForm() {
     _principalController.clear();
     _paymentController.clear();
-    _termController.text = '72';
     setState(() {
+      _term = 72;
       _ratePercent = null;
       _minPayment = null;
       _message = null;
@@ -51,9 +72,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
   void _calculate() {
     final principal = CurrencyInputFormatter.parse(_principalController.text);
     final payment = CurrencyInputFormatter.parse(_paymentController.text);
-    final term = int.tryParse(_termController.text);
 
-    if (principal <= 0 || payment <= 0 || term == null || term <= 0) {
+    if (principal <= 0 || payment <= 0) {
       setState(() {
         _ratePercent = null;
         _minPayment = null;
@@ -62,7 +82,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
       return;
     }
 
-    final minPayment = principal / term;
+    final minPayment = principal / _term;
     if (payment < minPayment) {
       setState(() {
         _ratePercent = null;
@@ -74,7 +94,7 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
 
     final rate = LoanMath.interestRate(
       principal: principal,
-      termMonths: term,
+      termMonths: _term,
       targetPayment: payment,
     );
 
@@ -152,14 +172,35 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => _termFocusNode.requestFocus(),
           ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _termController,
-            label: 'Term (Months)',
-            icon: Icons.calendar_today,
+          const SizedBox(height: 24),
+          TerminalSlider(
+            labelWidget: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium,
+                children: [
+                  const TextSpan(text: 'TERM: '),
+                  TextSpan(
+                    text: '$_term',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const TextSpan(text: ' MONTHS'),
+                ],
+              ),
+            ),
+            value: _term.toDouble(),
+            min: 36,
+            max: 84,
+            divisions: 4,
             focusNode: _termFocusNode,
-            textInputAction: TextInputAction.done,
-            isCurrency: false,
+            onChanged: (value) {
+              setState(() {
+                _term = value.round();
+              });
+              _calculate();
+            },
           ),
           const SizedBox(height: 24),
           SizedBox(

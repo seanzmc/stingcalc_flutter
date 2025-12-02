@@ -3,6 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'engine/core_calculators.dart';
 import 'utils/currency_input_formatter.dart';
 import 'widgets/data_readout.dart';
+import 'widgets/terminal_slider.dart';
 
 class AmountCalculatorScreen extends StatefulWidget {
   const AmountCalculatorScreen({super.key});
@@ -14,12 +15,12 @@ class AmountCalculatorScreen extends StatefulWidget {
 class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   final _paymentController = TextEditingController();
   final _rateController = TextEditingController(text: '6.9');
-  final _termController = TextEditingController(text: '72');
 
   final _paymentFocusNode = FocusNode();
   final _rateFocusNode = FocusNode();
   final _termFocusNode = FocusNode();
 
+  int _term = 72;
   bool _disableDocStamps = false;
 
   double? _loanAmount;
@@ -27,10 +28,30 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   double? _totalLoan;
 
   @override
+  void initState() {
+    super.initState();
+    // Add listeners for select-all on focus
+    _paymentFocusNode.addListener(
+      () => _selectAllOnFocus(_paymentFocusNode, _paymentController),
+    );
+    _rateFocusNode.addListener(
+      () => _selectAllOnFocus(_rateFocusNode, _rateController),
+    );
+  }
+
+  void _selectAllOnFocus(FocusNode node, TextEditingController controller) {
+    if (node.hasFocus) {
+      controller.selection = TextSelection(
+        baseOffset: 0,
+        extentOffset: controller.text.length,
+      );
+    }
+  }
+
+  @override
   void dispose() {
     _paymentController.dispose();
     _rateController.dispose();
-    _termController.dispose();
     _paymentFocusNode.dispose();
     _rateFocusNode.dispose();
     _termFocusNode.dispose();
@@ -40,8 +61,8 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   void _clearForm() {
     _paymentController.clear();
     _rateController.text = '6.9';
-    _termController.text = '72';
     setState(() {
+      _term = 72;
       _disableDocStamps = false;
       _loanAmount = null;
       _docStamps = null;
@@ -54,9 +75,8 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   void _calculate() {
     final payment = CurrencyInputFormatter.parse(_paymentController.text);
     final rate = double.tryParse(_rateController.text);
-    final term = int.tryParse(_termController.text);
 
-    if (payment <= 0 || rate == null || term == null || term <= 0) {
+    if (payment <= 0 || rate == null) {
       setState(() {
         _loanAmount = null;
         _docStamps = null;
@@ -67,7 +87,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
 
     final loanAmount = LoanMath.loanAmount(
       payment: payment,
-      termMonths: term,
+      termMonths: _term,
       annualRatePercent: rate,
     );
 
@@ -152,14 +172,35 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
             textInputAction: TextInputAction.next,
             onSubmitted: (_) => _termFocusNode.requestFocus(),
           ),
-          const SizedBox(height: 16),
-          _buildTextField(
-            controller: _termController,
-            label: 'Term (Months)',
-            icon: Icons.calendar_today,
+          const SizedBox(height: 24),
+          TerminalSlider(
+            labelWidget: RichText(
+              text: TextSpan(
+                style: Theme.of(context).textTheme.bodyMedium,
+                children: [
+                  const TextSpan(text: 'TERM: '),
+                  TextSpan(
+                    text: '$_term',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                  ),
+                  const TextSpan(text: ' MONTHS'),
+                ],
+              ),
+            ),
+            value: _term.toDouble(),
+            min: 36,
+            max: 84,
+            divisions: 4,
             focusNode: _termFocusNode,
-            textInputAction: TextInputAction.done,
-            isCurrency: false,
+            onChanged: (value) {
+              setState(() {
+                _term = value.round();
+              });
+              _calculate();
+            },
           ),
           const SizedBox(height: 16),
           SwitchListTile(
