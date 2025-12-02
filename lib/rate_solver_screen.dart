@@ -262,12 +262,19 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             ),
             child: Row(
               children: [
-                Icon(Icons.error_outline, color: theme.colorScheme.error),
+                Icon(
+                  Icons.error_outline,
+                  color: theme.colorScheme.onErrorContainer,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     _message ?? 'Error',
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: GoogleFonts.jetBrainsMono(
+                      color: theme.colorScheme.onErrorContainer,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -278,7 +285,8 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
             label: 'MINIMUM PAYMENT',
             value: '\$${CurrencyInputFormatter.formatResult(_minPayment!)}',
             isLarge: true,
-            valueColor: theme.colorScheme.error,
+            // Use a light red that is visible on the dark DataReadout background
+            valueColor: const Color(0xFFFF8A80), // RedAccent[100]
             icon: Icons.warning_amber_rounded,
           ),
         ],
@@ -294,12 +302,19 @@ class _RateSolverScreenState extends State<RateSolverScreen> {
         ),
         child: Row(
           children: [
-            Icon(Icons.error_outline, color: theme.colorScheme.error),
+            Icon(
+              Icons.error_outline,
+              color: theme.colorScheme.onErrorContainer,
+            ),
             const SizedBox(width: 12),
             Expanded(
               child: Text(
                 _message!,
-                style: TextStyle(color: theme.colorScheme.error),
+                style: GoogleFonts.jetBrainsMono(
+                  color: theme.colorScheme.onErrorContainer,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
           ],

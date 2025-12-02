@@ -21,11 +21,8 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
   final _termFocusNode = FocusNode();
 
   int _term = 72;
-  bool _disableDocStamps = false;
 
   double? _loanAmount;
-  double? _docStamps;
-  double? _totalLoan;
 
   @override
   void initState() {
@@ -63,10 +60,7 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     _rateController.text = '6.9';
     setState(() {
       _term = 72;
-      _disableDocStamps = false;
       _loanAmount = null;
-      _docStamps = null;
-      _totalLoan = null;
     });
     // Focus back on the first field
     _paymentFocusNode.requestFocus();
@@ -79,8 +73,6 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     if (payment <= 0 || rate == null) {
       setState(() {
         _loanAmount = null;
-        _docStamps = null;
-        _totalLoan = null;
       });
       return;
     }
@@ -91,13 +83,8 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
       annualRatePercent: rate,
     );
 
-    final docStamps = _disableDocStamps ? 0.0 : LoanMath.docStamps(loanAmount);
-    final totalLoan = loanAmount + docStamps;
-
     setState(() {
       _loanAmount = loanAmount;
-      _docStamps = docStamps;
-      _totalLoan = totalLoan;
     });
   }
 
@@ -202,18 +189,6 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
               _calculate();
             },
           ),
-          const SizedBox(height: 16),
-          SwitchListTile(
-            title: const Text('Disable Florida Doc Stamps'),
-            value: _disableDocStamps,
-            onChanged: (value) {
-              setState(() {
-                _disableDocStamps = value;
-              });
-              _calculate();
-            },
-            contentPadding: EdgeInsets.zero,
-          ),
           const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
@@ -277,29 +252,10 @@ class _AmountCalculatorScreenState extends State<AmountCalculatorScreen> {
     return Column(
       children: [
         DataReadout(
-          label: 'LOAN AMOUNT (PRE-TAX)',
+          label: 'LOAN AMOUNT',
           value: _formatCurrency(_loanAmount!),
           isLarge: true,
           valueColor: theme.colorScheme.primary,
-        ),
-        const SizedBox(height: 24),
-        Row(
-          children: [
-            Expanded(
-              child: DataReadout(
-                label: 'DOC STAMPS',
-                value: _formatCurrency(_docStamps ?? 0.0),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: DataReadout(
-                label: 'TOTAL LOAN',
-                value: _formatCurrency(_totalLoan ?? 0.0),
-                valueColor: theme.colorScheme.secondary,
-              ),
-            ),
-          ],
         ),
       ],
     );
